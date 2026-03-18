@@ -43,7 +43,15 @@ class _AuthScreenState extends State<AuthScreen> {
                         color: isLogin ? Colors.white : Colors.grey[300],
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(child: Text("Login")),
+                      child: Center(
+                        child: Text(
+                          "Login",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isLogin ? Colors.amber : Colors.grey[600],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -61,7 +69,15 @@ class _AuthScreenState extends State<AuthScreen> {
                         color: !isLogin ? Colors.white : Colors.grey[300],
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Center(child: Text("Sign-Up")),
+                      child: Center(
+                        child: Text(
+                          "Sign-Up",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: !isLogin ? Colors.amber : Colors.grey[600],
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
