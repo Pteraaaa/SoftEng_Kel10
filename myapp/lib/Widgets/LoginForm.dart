@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 
-class LoginForm extends StatelessWidget {
+class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
 
+  @override
+  State<LoginForm> createState() => _LoginFormState();
+}
+
+class _LoginFormState extends State<LoginForm> {
+  bool isHidden = true;
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text("Email Address"),
+        const SizedBox(height: 6),
         TextField(
           decoration: InputDecoration(
             hintText: "yourname@example.com",
@@ -19,16 +26,33 @@ class LoginForm extends StatelessWidget {
         const SizedBox(height: 20),
 
         const Text("Password"),
+        const SizedBox(height: 6),
         TextField(
-          obscureText: true,
+          obscureText: isHidden,
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.lock),
             hintText: "Enter your password",
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            suffixIcon: IconButton(
+              onPressed: () {
+                setState(() {
+                  isHidden = !isHidden;
+                });
+              },
+              icon: Icon(isHidden ? Icons.visibility : Icons.visibility_off),
+            ),
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton(onPressed: () {}, child: const Text("Login")),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+            onPressed: () {},
+            child: const Text("Login"),
+          ),
+        ),
       ],
     );
   }

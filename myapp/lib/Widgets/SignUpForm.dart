@@ -6,20 +6,39 @@ class SignUpForm extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text("Email Address"),
+        const SizedBox(height: 6),
         TextField(
           decoration: InputDecoration(
-            labelText: "Input Email",
             hintText: "yourname@example.com",
+            prefixIcon: Icon(Icons.email),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         const SizedBox(height: 20),
+
+        const Text("Password"),
+        const SizedBox(height: 6),
         TextField(
           obscureText: true,
-          decoration: InputDecoration(labelText: "Password"),
+          decoration: InputDecoration(
+            prefixIcon: Icon(Icons.lock),
+            hintText: "Enter your password",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton(onPressed: () {}, child: const Text("Sign Up")),
+
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
+            onPressed: () {},
+            child: const Text("Sign Up"),
+          ),
+        ),
       ],
     );
   }
