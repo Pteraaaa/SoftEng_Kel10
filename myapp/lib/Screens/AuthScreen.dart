@@ -19,15 +19,16 @@ class _AuthScreenState extends State<AuthScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const SizedBox(height: 60),
+            const SizedBox(height: 20),
 
             const Text(
               "Welcome Back",
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
+            Image.asset("assets/images/logo.jpeg"),
             Row(
               children: [
                 Expanded(
