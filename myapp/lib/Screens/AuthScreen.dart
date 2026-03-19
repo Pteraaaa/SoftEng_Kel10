@@ -28,7 +28,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
             const SizedBox(height: 20),
 
-            Image.asset("assets/images/logo.jpeg"),
+            Image.asset("assets/images/logo.jpg", width: 400, height: 122),
+
+            const SizedBox(height: 20),
+
             Row(
               children: [
                 Expanded(

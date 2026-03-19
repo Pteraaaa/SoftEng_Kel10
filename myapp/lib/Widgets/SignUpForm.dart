@@ -14,6 +14,17 @@ class _SignUpFormState extends State<SignUpForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const Text("Username"),
+        const SizedBox(height: 6),
+        TextField(
+          decoration: InputDecoration(
+            hintText: "Username",
+            prefixIcon: Icon(Icons.person),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 20),
+
         const Text("Email Address"),
         const SizedBox(height: 6),
         TextField(
