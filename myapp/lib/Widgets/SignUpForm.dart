@@ -33,6 +33,7 @@ class _SignUpFormState extends State<SignUpForm> {
               if (value == null || value.isEmpty) {
                 return "Username is required";
               }
+              return null;
             },
           ),
           const SizedBox(height: 20),
@@ -54,6 +55,7 @@ class _SignUpFormState extends State<SignUpForm> {
               if (!value.contains("@") || !value.contains(".com")) {
                 return "Invalid Email";
               }
+              return null;
             },
           ),
           const SizedBox(height: 20),
@@ -90,6 +92,7 @@ class _SignUpFormState extends State<SignUpForm> {
               if (!RegExp(r'[a-z]').hasMatch(value)) {
                 return "Password must contain a lowercase letter";
               }
+              return null;
             },
           ),
           const SizedBox(height: 20),

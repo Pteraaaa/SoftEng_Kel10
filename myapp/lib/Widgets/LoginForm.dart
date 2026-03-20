@@ -36,6 +36,7 @@ class _LoginFormState extends State<LoginForm> {
               if (!value.contains("@") || !value.contains(".com")) {
                 return "Invalid Email";
               }
+              return null;
             },
           ),
           const SizedBox(height: 20),
@@ -72,6 +73,7 @@ class _LoginFormState extends State<LoginForm> {
               if (!RegExp(r'[a-z]').hasMatch(value)) {
                 return "Password must contain a lowercase letter";
               }
+              return null;
             },
           ),
           const SizedBox(height: 20),
