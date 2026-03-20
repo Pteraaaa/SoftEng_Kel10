@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Screens/HomeScreen.dart';
 import 'Screens/LandingScreen.dart';
 
 void main() {
@@ -13,7 +14,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: "Pocket Log",
       debugShowCheckedModeBanner: false,
-      home: const LandingScreen(),
+      home: const HomeScreen(),
     );
   }
 }

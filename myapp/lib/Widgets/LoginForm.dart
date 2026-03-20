@@ -64,6 +64,9 @@ class _LoginFormState extends State<LoginForm> {
               if (value == null || value.isEmpty) {
                 return "Password is required";
               }
+              if (value.length < 8) {
+                return "Password must be 8 characters or longer";
+              }
               if (!RegExp(r'[0-9]').hasMatch(value)) {
                 return "Password must contain a number";
               }

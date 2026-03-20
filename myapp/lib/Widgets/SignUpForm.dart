@@ -86,6 +86,9 @@ class _SignUpFormState extends State<SignUpForm> {
               if (!RegExp(r'[0-9]').hasMatch(value)) {
                 return "Password must contain a number";
               }
+              if (value.length < 8) {
+                return "Password must be 8 characters or longer";
+              }
               if (!RegExp(r'[A-Z]').hasMatch(value)) {
                 return "Password must contain an uppercase letter";
               }
