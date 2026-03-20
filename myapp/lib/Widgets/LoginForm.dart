@@ -33,7 +33,7 @@ class _LoginFormState extends State<LoginForm> {
               if (value == null || value.isEmpty) {
                 return "Email is required";
               }
-              if (!value.contains("@")) {
+              if (!value.contains("@") || !value.contains(".com")) {
                 return "Invalid Email";
               }
             },
@@ -42,7 +42,7 @@ class _LoginFormState extends State<LoginForm> {
 
           const Text("Password"),
           const SizedBox(height: 6),
-          TextField(
+          TextFormField(
             obscureText: isHidden,
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.lock),
@@ -59,6 +59,20 @@ class _LoginFormState extends State<LoginForm> {
                 icon: Icon(isHidden ? Icons.visibility : Icons.visibility_off),
               ),
             ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return "Password is required";
+              }
+              if (!RegExp(r'[0-9]').hasMatch(value)) {
+                return "Password must contain a number";
+              }
+              if (!RegExp(r'[A-Z]').hasMatch(value)) {
+                return "Password must contain an uppercase letter";
+              }
+              if (!RegExp(r'[a-z]').hasMatch(value)) {
+                return "Password must contain a lowercase letter";
+              }
+            },
           ),
           const SizedBox(height: 20),
 
