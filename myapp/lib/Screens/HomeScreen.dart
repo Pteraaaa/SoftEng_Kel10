@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               TotalBalance(),
 
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Infocard(
@@ -56,6 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     iconColor: Colors.green,
                     backgroundColor: Colors.green[100]!,
                   ),
+
+                  const SizedBox(width: 10),
+
                   Infocard(
                     title: "Expenses",
                     amount: "Rp. 420.000",
