@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class Infocard extends StatelessWidget {
   final String title;
-  final String amount;
+  final int amount;
   final IconData icon;
   final Color iconColor;
   final Color backgroundColor;
@@ -57,7 +57,7 @@ class Infocard extends StatelessWidget {
             const SizedBox(height: 10),
 
             Text(
-              amount,
+              "Rp $amount",
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ],

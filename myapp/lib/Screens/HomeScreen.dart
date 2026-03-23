@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
+import 'package:myapp/Widgets/WalletCard.dart';
 import '../Widgets/TotalBalance.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -52,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Infocard(
                     title: "Income",
-                    amount: "Rp. 420.000",
+                    amount: 420000,
                     icon: Icons.arrow_downward,
                     iconColor: Colors.green,
                     backgroundColor: Colors.green[100]!,
@@ -62,13 +63,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   Infocard(
                     title: "Expenses",
-                    amount: "Rp. 420.000",
+                    amount: 420000,
                     icon: Icons.arrow_upward,
                     iconColor: Colors.red,
                     backgroundColor: Colors.red[100]!,
                   ),
                 ],
               ),
+
+              const SizedBox(height: 12),
+              WalletCard(title: "babi", code: "0011", balance: 20000),
             ],
           ),
         ),
