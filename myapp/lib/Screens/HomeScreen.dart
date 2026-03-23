@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Widgets/InfoCard.dart';
 import '../Widgets/TotalBalance.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,12 +19,52 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text(
-                "Welcome Back",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Welcome Back",
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        "John Doe",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(onPressed: () {}, icon: Icon(Icons.notifications)),
+                ],
               ),
+
               const SizedBox(height: 12),
               TotalBalance(),
+
+              Row(
+                children: [
+                  Infocard(
+                    title: "Income",
+                    amount: "Rp. 420.000",
+                    icon: Icons.arrow_downward,
+                    iconColor: Colors.green,
+                    backgroundColor: Colors.green[100]!,
+                  ),
+                  Infocard(
+                    title: "Expenses",
+                    amount: "Rp. 420.000",
+                    icon: Icons.arrow_upward,
+                    iconColor: Colors.red,
+                    backgroundColor: Colors.red[100]!,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
