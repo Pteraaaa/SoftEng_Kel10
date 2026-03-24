@@ -1,10 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TotalBalance extends StatelessWidget {
-  const TotalBalance({super.key});
+  final int balance;
+
+  const TotalBalance({super.key, required this.balance});
 
   @override
   Widget build(BuildContext context) {
+    final formatter = NumberFormat.currency(
+      locale: "id_ID",
+      symbol: "Rp. ",
+      decimalDigits: 0,
+    );
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(10),
@@ -25,7 +34,7 @@ class TotalBalance extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          Text("Rp. 24,054,000"),
+          Text(formatter.format(balance)),
 
           const SizedBox(height: 30),
         ],

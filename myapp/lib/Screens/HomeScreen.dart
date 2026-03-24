@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
-import 'package:myapp/Widgets/WalletCard.dart';
+import 'package:myapp/Widgets/WalletSection.dart';
 import '../Widgets/TotalBalance.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 12),
-              TotalBalance(),
+              TotalBalance(balance: 24054000),
 
               const SizedBox(height: 12),
               Row(
@@ -71,8 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
 
-              const SizedBox(height: 12),
-              WalletCard(title: "babi", code: "0011", balance: 20000),
+              const SizedBox(height: 15),
+              WalletSection(),
             ],
           ),
         ),

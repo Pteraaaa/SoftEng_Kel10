@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Infocard extends StatelessWidget {
   final String title;
@@ -18,6 +19,12 @@ class Infocard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final formatter = NumberFormat.currency(
+      locale: "id_ID",
+      symbol: "Rp. ",
+      decimalDigits: 0,
+    );
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -57,7 +64,7 @@ class Infocard extends StatelessWidget {
             const SizedBox(height: 10),
 
             Text(
-              "Rp $amount",
+              formatter.format(amount),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ],

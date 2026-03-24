@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class WalletCard extends StatefulWidget {
   final String title;
@@ -20,11 +21,17 @@ class _WalletCardState extends State<WalletCard> {
   bool hideCard = true;
   bool hideBalance = true;
 
+  final formatter = NumberFormat.currency(
+    locale: "id_ID",
+    symbol: "Rp. ",
+    decimalDigits: 0,
+  );
+
   @override
   Widget build(BuildContext context) {
     return Container(
       width: 200,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
@@ -47,7 +54,9 @@ class _WalletCardState extends State<WalletCard> {
           Row(
             children: [
               Text(
-                hideCard ? "****" : widget.code,
+                hideCard
+                    ? "**** ${widget.code.substring(widget.code.length - 4)}"
+                    : widget.code,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 15,
@@ -76,7 +85,7 @@ class _WalletCardState extends State<WalletCard> {
           Row(
             children: [
               Text(
-                hideBalance ? "Rp. ••••••" : "Rp. ${widget.balance}",
+                hideBalance ? "Rp. ••••••" : formatter.format(widget.balance),
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
