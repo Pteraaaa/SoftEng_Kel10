@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/WalletModel.dart';
-import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/WalletCard.dart';
 
 class WalletSection extends StatelessWidget {
@@ -27,15 +26,7 @@ class WalletSection extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
 
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => AddWalletScreen()),
-                  );
-                },
-                icon: Icon(Icons.add),
-              ),
+              IconButton(onPressed: onAddWallet, icon: Icon(Icons.add)),
             ],
           ),
 
@@ -75,6 +66,7 @@ class WalletSection extends StatelessWidget {
                       title: wallet.title,
                       code: wallet.code,
                       balance: wallet.balance,
+                      index: index,
                     ),
                   );
                 },
@@ -82,66 +74,6 @@ class WalletSection extends StatelessWidget {
             ),
         ],
       ),
-    );
-    Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "My Wallet",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-
-            IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => AddWalletScreen()),
-                );
-              },
-              icon: Icon(Icons.add),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 8),
-
-        if (wallets.isEmpty)
-          GestureDetector(
-            onTap: onAddWallet,
-            child: Container(
-              height: 170,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey),
-              ),
-              child: const Center(child: Text("+ Add Your First Wallet!")),
-            ),
-          )
-        else
-          SizedBox(
-            height: 170,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: wallets.length + 1,
-              itemBuilder: (context, itemCount) {
-                final wallet = wallets[itemCount];
-
-                return Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: WalletCard(
-                    title: wallet.title,
-                    code: wallet.code,
-                    balance: wallet.balance,
-                  ),
-                );
-              },
-            ),
-          ),
-      ],
     );
   }
 }

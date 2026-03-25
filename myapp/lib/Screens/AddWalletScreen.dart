@@ -19,18 +19,47 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
       body: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextField(
+            const Text("Bank Name"),
+            const SizedBox(height: 6),
+
+            TextFormField(
               controller: titleController,
-              decoration: const InputDecoration(labelText: "Bank Name"),
+              decoration: InputDecoration(
+                hintText: "ABC Bank",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            TextField(
+            const SizedBox(height: 6),
+
+            const Text("Account Number"),
+            const SizedBox(height: 6),
+
+            TextFormField(
               controller: codeController,
-              decoration: InputDecoration(labelText: "Bank Number"),
+              decoration: InputDecoration(
+                hintText: "Ex: 1234 1234 1234",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            TextField(
+            const SizedBox(height: 6),
+
+            const Text("Account Balance"),
+            const SizedBox(height: 6),
+
+            TextFormField(
               controller: balanceController,
-              decoration: InputDecoration(labelText: "Account Balance"),
+              decoration: InputDecoration(
+                hintText: "10000",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
 
             SizedBox(height: 16),

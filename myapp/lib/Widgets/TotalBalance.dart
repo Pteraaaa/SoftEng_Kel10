@@ -34,7 +34,10 @@ class TotalBalance extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          Text(formatter.format(balance)),
+          Text(
+            formatter.format(balance),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+          ),
 
           const SizedBox(height: 30),
         ],

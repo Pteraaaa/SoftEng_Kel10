@@ -5,12 +5,14 @@ class WalletCard extends StatefulWidget {
   final String title;
   final String code;
   final int balance;
+  final int index;
 
   const WalletCard({
     super.key,
     required this.title,
     required this.code,
     required this.balance,
+    required this.index,
   });
 
   @override
@@ -18,6 +20,12 @@ class WalletCard extends StatefulWidget {
 }
 
 class _WalletCardState extends State<WalletCard> {
+  final List<List<Color>> cardGradients = [
+    [Color.fromARGB(255, 2, 56, 101), Color.fromARGB(255, 23, 83, 151)],
+    [Colors.amber, Colors.yellow],
+    [Colors.black, Colors.grey],
+  ];
+
   bool hideCard = true;
   bool hideBalance = true;
 
@@ -29,13 +37,19 @@ class _WalletCardState extends State<WalletCard> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = cardGradients[widget.index % cardGradients.length];
+
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
       padding: const EdgeInsets.all(16),
 
       decoration: BoxDecoration(
-        color: const Color.fromARGB(255, 2, 56, 101),
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

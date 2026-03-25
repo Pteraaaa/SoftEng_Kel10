@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
@@ -14,6 +15,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<WalletModel> wallets = [];
+
+  List<TransactionModel> transactions = [
+    TransactionModel(
+      title: "Amazon",
+      category: "Shopping",
+      date: DateTime.now(),
+      amount: 54000,
+      isExpense: true,
+    ),
+    TransactionModel(
+      title: "Uber Eats",
+      category: "Food",
+      date: DateTime.now().subtract(const Duration(days: 1)),
+      amount: 20000,
+      isExpense: true,
+    ),
+    TransactionModel(
+      title: "Upwork Inc.",
+      category: "Salary",
+      date: DateTime.now().subtract(const Duration(days: 3)),
+      amount: 85000,
+      isExpense: false,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
