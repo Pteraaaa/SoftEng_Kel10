@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Models/WalletModel.dart';
+import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
 import 'package:myapp/Widgets/WalletSection.dart';
 import '../Widgets/TotalBalance.dart';
@@ -11,6 +13,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<WalletModel> wallets = [];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,11 +76,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
               const SizedBox(height: 15),
-              WalletSection(),
+              WalletSection(
+                wallets: wallets,
+                onAddWallet: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AddWalletScreen()),
+                  );
+
+                  if (result != null) {
+                    addWallet(
+                      WalletModel(
+                        title: result["title"],
+                        code: result["code"],
+                        balance: result["balance"],
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void addWallet(WalletModel wallet) {
+    setState(() {
+      wallets.add(wallet);
+    });
   }
 }

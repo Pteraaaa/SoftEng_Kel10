@@ -1,12 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Models/WalletModel.dart';
+import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/WalletCard.dart';
 
 class WalletSection extends StatelessWidget {
-  const WalletSection({super.key});
+  final List<WalletModel> wallets;
+  final VoidCallback onAddWallet;
+
+  const WalletSection({
+    super.key,
+    required this.wallets,
+    required this.onAddWallet,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "My Wallet",
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => AddWalletScreen()),
+                  );
+                },
+                icon: Icon(Icons.add),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          if (wallets.isEmpty)
+            GestureDetector(
+              onTap: onAddWallet,
+              child: Container(
+                height: 170,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey),
+                ),
+                child: const Center(child: Text("+ Add Your First Wallet!")),
+              ),
+            )
+          else
+            SizedBox(
+              height: 170,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: wallets.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == wallets.length) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: AddWalletCard(onTap: onAddWallet),
+                    );
+                  }
+                  final wallet = wallets[index];
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: WalletCard(
+                      title: wallet.title,
+                      code: wallet.code,
+                      balance: wallet.balance,
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+    Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -17,42 +94,76 @@ class WalletSection extends StatelessWidget {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
 
-            IconButton(onPressed: () {}, icon: Icon(Icons.add)),
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AddWalletScreen()),
+                );
+              },
+              icon: Icon(Icons.add),
+            ),
           ],
         ),
 
         const SizedBox(height: 8),
 
-        SizedBox(
-          height: 180,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            physics: BouncingScrollPhysics(),
-            children: [
-              WalletCard(
-                title: "BCA Account",
-                code: "1011 1012 1000",
-                balance: 20000000,
+        if (wallets.isEmpty)
+          GestureDetector(
+            onTap: onAddWallet,
+            child: Container(
+              height: 170,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey),
               ),
-              WalletCard(
-                title: "BCA Account",
-                code: "1011 1012 1000",
-                balance: 20000000,
-              ),
-              WalletCard(
-                title: "BCA Account",
-                code: "1011 1012 1000",
-                balance: 20000000,
-              ),
-              WalletCard(
-                title: "BCA Account",
-                code: "1011 1012 1000",
-                balance: 20000000,
-              ),
-            ],
+              child: const Center(child: Text("+ Add Your First Wallet!")),
+            ),
+          )
+        else
+          SizedBox(
+            height: 170,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: wallets.length + 1,
+              itemBuilder: (context, itemCount) {
+                final wallet = wallets[itemCount];
+
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: WalletCard(
+                    title: wallet.title,
+                    code: wallet.code,
+                    balance: wallet.balance,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
       ],
+    );
+  }
+}
+
+class AddWalletCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const AddWalletCard({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Center(child: Icon(Icons.add, size: 40)),
+      ),
     );
   }
 }
