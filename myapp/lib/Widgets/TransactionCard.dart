@@ -15,13 +15,6 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<Color> colors = [
-      Colors.blue,
-      Colors.red,
-      Colors.orange,
-      Colors.green,
-    ];
-
     final formatter = NumberFormat('#.###', "id_ID");
 
     return Container(
@@ -52,26 +45,27 @@ class TransactionCard extends StatelessWidget {
           ),
 
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                transaction.title,
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 2),
-              Text(
-                "${transaction.category} • ${_formatDate()}",
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 5,
-                  fontWeight: FontWeight.w200,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  transaction.title,
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-              ),
-            ],
+                SizedBox(height: 2),
+                Text(
+                  "${transaction.category} • ${_formatDate()}",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w200,
+                  ),
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(width: 12),
           Text(
             "${transaction.isExpense ? '-' : '+'}Rp. ${formatter.format(transaction.amount)}",
             style: TextStyle(
