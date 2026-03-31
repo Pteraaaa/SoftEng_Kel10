@@ -55,16 +55,32 @@ class _WalletCardState extends State<WalletCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.credit_card, color: Colors.white.withOpacity(0.5)),
-          const SizedBox(height: 5),
-          Text(
-            widget.title,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.normal,
-              fontSize: 10,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.credit_card, color: Colors.white.withOpacity(0.5)),
+                  const SizedBox(height: 5),
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: Icon(Icons.delete, color: Colors.white),
+              ),
+            ],
           ),
+
           Row(
             children: [
               Text(

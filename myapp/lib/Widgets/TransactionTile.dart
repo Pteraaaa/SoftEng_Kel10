@@ -33,6 +33,8 @@ class TransactionSection extends StatelessWidget {
               );
             },
           ),
+
+        SizedBox(height: 20),
       ],
     );
   }

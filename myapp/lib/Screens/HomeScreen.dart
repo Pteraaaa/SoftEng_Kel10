@@ -39,6 +39,13 @@ class _HomeScreenState extends State<HomeScreen> {
       amount: 85000,
       isExpense: false,
     ),
+    TransactionModel(
+      title: "Gojek",
+      category: "Food",
+      date: DateTime.now().subtract(const Duration(days: 5)),
+      amount: 20000,
+      isExpense: true,
+    ),
   ];
 
   @override
@@ -130,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 const SizedBox(height: 12),
                 TransactionSection(transactions: transactions),
+                const SizedBox(height: 12),
               ],
             ),
           ),

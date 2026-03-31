@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
@@ -18,6 +17,7 @@ class TransactionCard extends StatelessWidget {
     final formatter = NumberFormat('#.###', "id_ID");
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: Colors.white,
