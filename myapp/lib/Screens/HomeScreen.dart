@@ -3,6 +3,7 @@ import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
+import 'package:myapp/Widgets/NavBar.dart';
 import 'package:myapp/Widgets/TransactionTile.dart';
 import 'package:myapp/Widgets/WalletSection.dart';
 import '../Widgets/TotalBalance.dart';
@@ -42,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     TransactionModel(
       title: "Gojek",
       category: "Food",
-      date: DateTime.now().subtract(const Duration(days: 5)),
+      date: DateTime.now().add(const Duration(days: 5)),
       amount: 20000,
       isExpense: true,
     ),
@@ -136,12 +137,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 const SizedBox(height: 12),
-                TransactionSection(transactions: transactions),
-                const SizedBox(height: 12),
+                TransactionSection(transactions: sortedTransactions),
               ],
             ),
           ),
         ),
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: Colors.amber,
+        child: const Icon(Icons.add, color: Colors.black),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      bottomNavigationBar: NavBar(
+        selectedIndex: 0,
+        onTap: (index) {
+          // handle navigation here later
+        },
       ),
     );
   }
@@ -150,5 +164,13 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       wallets.add(wallet);
     });
+  }
+
+  List<TransactionModel> get sortedTransactions {
+    List<TransactionModel> sorted = List.from(transactions);
+
+    sorted.sort((a, b) => b.date.compareTo(a.date)); // newest first
+
+    return sorted;
   }
 }
