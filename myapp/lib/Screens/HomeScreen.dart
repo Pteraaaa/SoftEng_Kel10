@@ -16,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
   List<WalletModel> wallets = [];
 
   List<TransactionModel> transactions = [
@@ -152,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
       bottomNavigationBar: NavBar(
-        selectedIndex: 0,
+        selectedIndex: _selectedIndex,
         onTap: (index) {
           // handle navigation here later
         },
