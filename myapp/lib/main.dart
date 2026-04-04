@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Screens/AuthScreen.dart';
 import 'package:myapp/Screens/HomeScreen.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
 import 'Screens/LandingScreen.dart';
@@ -15,7 +16,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: "Pocket Log",
       debugShowCheckedModeBanner: false,
-      home: const TemplateScreen(),
+      home: const AuthScreen(),
     );
   }
 }

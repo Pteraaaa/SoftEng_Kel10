@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/Screens/HomeScreen.dart';
+import 'package:myapp/Screens/TemplateScreen.dart';
+import 'package:myapp/Services/UserStore.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -10,6 +11,9 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   bool isHidden = true;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -22,6 +26,7 @@ class _LoginFormState extends State<LoginForm> {
           const Text("Email Address"),
           const SizedBox(height: 6),
           TextFormField(
+            controller: emailController,
             decoration: InputDecoration(
               hintText: "yourname@example.com",
               prefixIcon: Icon(Icons.email),
@@ -44,6 +49,7 @@ class _LoginFormState extends State<LoginForm> {
           const Text("Password"),
           const SizedBox(height: 6),
           TextFormField(
+            controller: passwordController,
             obscureText: isHidden,
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.lock),
@@ -87,11 +93,25 @@ class _LoginFormState extends State<LoginForm> {
               style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  print("Valid");
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  final user = UserStore.login(
+                    emailController.text,
+                    passwordController.text,
                   );
+
+                  if (user != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TemplateScreen(user: user),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Invalid email or password"),
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text("Login"),

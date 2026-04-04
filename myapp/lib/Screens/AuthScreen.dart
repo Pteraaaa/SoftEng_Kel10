@@ -89,7 +89,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             const SizedBox(height: 20),
 
-            isLogin ? const LoginForm() : const SignUpForm(),
+            Expanded(child: isLogin ? const LoginForm() : const SignUpForm()),
           ],
         ),
       ),

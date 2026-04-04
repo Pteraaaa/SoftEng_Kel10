@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/TransactionModel.dart';
+import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/AddWalletScreen.dart';
 import 'package:myapp/Widgets/InfoCard.dart';
@@ -8,14 +9,14 @@ import 'package:myapp/Widgets/WalletSection.dart';
 import '../Widgets/TotalBalance.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final UsersModel user;
+  const HomeScreen({required this.user, super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _selectedIndex = 0;
   List<WalletModel> wallets = [];
 
   List<TransactionModel> transactions = [
@@ -71,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        "John Doe",
+                        widget.user.username,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Widgets/NavBar.dart';
 import 'HomeScreen.dart';
 import 'AnalyticsScreen.dart';
@@ -6,7 +7,8 @@ import 'ProfileScreen.dart';
 import 'TransactionScreen.dart';
 
 class TemplateScreen extends StatefulWidget {
-  const TemplateScreen({super.key});
+  final UsersModel user;
+  const TemplateScreen({required this.user, super.key});
 
   @override
   State<TemplateScreen> createState() => _TemplateScreenState();
@@ -18,7 +20,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
   Widget _getScreen() {
     switch (_selectedIndex) {
       case 0:
-        return HomeScreen();
+        return HomeScreen(user: widget.user);
       case 1:
         return TransactionScreen();
       case 2:
@@ -26,7 +28,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
       case 3:
         return ProfileScreen();
       default:
-        return HomeScreen();
+        return HomeScreen(user: widget.user);
     }
   }
 
