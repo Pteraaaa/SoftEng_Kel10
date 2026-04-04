@@ -7,10 +7,10 @@ class UserStore {
     _users.add(user);
   }
 
-  static UsersModel? login(String email, String password) {
+  static UsersModel? login(String username, String password) {
     try {
       return _users.firstWhere(
-        (user) => user.email == email && user.password == password,
+        (user) => user.username == username && user.password == password,
       );
     } catch (e) {
       return null;
@@ -19,5 +19,23 @@ class UserStore {
 
   static bool emailExists(String email) {
     return _users.any((user) => user.email == email);
+  }
+
+  static UsersModel loginWithGoogle(String email, String name) {
+    for (var user in _users) {
+      if (user.email == email) return user;
+    }
+
+    final newUser = UsersModel(
+      username: name,
+      email: email,
+      password: "",
+      dob: null,
+      gender: "",
+      profileImage: "",
+    );
+
+    _users.add(newUser);
+    return newUser;
   }
 }

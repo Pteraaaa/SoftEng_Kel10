@@ -1,7 +1,7 @@
 class UsersModel {
   String username;
   String gender;
-  DateTime dob;
+  DateTime? dob;
   String email;
   String password;
   String profileImage;

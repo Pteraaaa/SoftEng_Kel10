@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:myapp/Services/GoogleAuthService.dart';
 import 'package:myapp/Services/UserStore.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -211,6 +212,52 @@ class _SignUpFormState extends State<SignUpForm> {
                   }
                 },
                 child: const Text("Sign Up"),
+              ),
+            ),
+
+            SizedBox(height: 15),
+
+            Row(
+              children: [
+                const Expanded(child: Divider(thickness: 1)),
+
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text("OR"),
+                ),
+
+                const Expanded(child: Divider(thickness: 1)),
+              ],
+            ),
+
+            const SizedBox(height: 15),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: Image.asset("assets/images/Google.png", height: 24),
+                label: const Text("Login with Google"),
+                onPressed: () async {
+                  final account = await GoogleAuthService.signIn();
+
+                  if (account != null) {
+                    final user = UserStore.loginWithGoogle(
+                      account.email,
+                      account.displayName ?? "Google User",
+                    );
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => TemplateScreen(user: user),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Google Login Failed")),
+                    );
+                  }
+                },
               ),
             ),
           ],
