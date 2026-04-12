@@ -9,7 +9,11 @@ class TransactionScreen extends StatefulWidget {
   State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
+enum FilterType { all, income, expense }
+
 class _TransactionScreenState extends State<TransactionScreen> {
+  FilterType selectedFilter = FilterType.all;
+
   @override
   Widget build(BuildContext context) {
     final transactions = [
@@ -50,6 +54,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
       ),
     ];
 
+    final filtered = _getFiltered(transactions);
+
     return Padding(
       padding: EdgeInsets.all(20),
       child: Column(
@@ -71,10 +77,9 @@ class _TransactionScreenState extends State<TransactionScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              ElevatedButton(onPressed: () {}, child: Text("All")),
-              ElevatedButton(onPressed: () {}, child: Text("Income")),
-              ElevatedButton(onPressed: () {}, child: Text("Expense")),
-              ElevatedButton(onPressed: () {}, child: Text("Transfer")),
+              _buildFilter("All", FilterType.all),
+              _buildFilter("Income", FilterType.income),
+              _buildFilter("Expense", FilterType.expense),
             ],
           ),
 
@@ -84,22 +89,30 @@ class _TransactionScreenState extends State<TransactionScreen> {
             child: ListView(
               children: [
                 _sectionTitle("TODAY"),
-                ...List.generate(
-                  3,
-                  (index) => TransactionCard(
-                    transaction: transactions[index],
-                    index: index,
-                  ),
-                ),
+                ...filtered
+                    .where((t) => _isToday(t.date))
+                    .toList()
+                    .asMap()
+                    .entries
+                    .map(
+                      (entry) => TransactionCard(
+                        transaction: entry.value,
+                        index: entry.key,
+                      ),
+                    ),
 
                 _sectionTitle("YESTERDAY"),
-                ...List.generate(
-                  2,
-                  (index) => TransactionCard(
-                    transaction: transactions[index + 3],
-                    index: index,
-                  ),
-                ),
+                ...filtered
+                    .where((t) => _isYesterday(t.date))
+                    .toList()
+                    .asMap()
+                    .entries
+                    .map(
+                      (entry) => TransactionCard(
+                        transaction: entry.value,
+                        index: entry.key,
+                      ),
+                    ),
               ],
             ),
           ),
@@ -108,10 +121,18 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  static Widget _FilterButton(String title) {
-    return SizedBox(
-      child: ElevatedButton(onPressed: () {}, child: Text(title)),
-    );
+  bool _isToday(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
+  bool _isYesterday(DateTime date) {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return date.year == yesterday.year &&
+        date.month == yesterday.month &&
+        date.day == yesterday.day;
   }
 
   static Widget _sectionTitle(String title) {
@@ -126,5 +147,43 @@ class _TransactionScreenState extends State<TransactionScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildFilter(String text, FilterType type) {
+    final isActive = selectedFilter == type;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedFilter = type;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.amber : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.grey,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<TransactionModel> _getFiltered(List<TransactionModel> transaction) {
+    switch (selectedFilter) {
+      case FilterType.income:
+        return transaction.where((t) => !t.isExpense).toList();
+      case FilterType.expense:
+        return transaction.where((t) => t.isExpense).toList();
+      default:
+        return transaction;
+    }
   }
 }
