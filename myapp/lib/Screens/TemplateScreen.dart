@@ -5,6 +5,7 @@ import 'HomeScreen.dart';
 import 'AnalyticsScreen.dart';
 import 'ProfileScreen.dart';
 import 'TransactionScreen.dart';
+import 'AddTransactionScreen.dart';
 
 class TemplateScreen extends StatefulWidget {
   final UsersModel user;
@@ -38,7 +39,61 @@ class _TemplateScreenState extends State<TemplateScreen> {
       body: _getScreen(),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Choose Option",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    ListTile(
+                      leading: const Icon(Icons.attach_money),
+                      title: const Text("Transaction"),
+                      onTap: () {
+                        Navigator.pop(context);
+
+                        // Navigate or do something
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => AddTransactionScreen(),
+                          ),
+                        );
+                      },
+                    ),
+
+                    ListTile(
+                      leading: const Icon(Icons.notifications),
+                      title: const Text("Notification"),
+                      onTap: () {
+                        Navigator.pop(context);
+
+                        // Navigate or do something
+                        print("Notification Selected");
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+
         backgroundColor: Colors.amber,
         child: const Icon(Icons.add, color: Colors.black),
       ),

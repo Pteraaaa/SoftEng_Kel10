@@ -9,7 +9,7 @@ class TransactionScreen extends StatefulWidget {
   State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
-enum FilterType { all, income, expense }
+enum FilterType { all, income, expense, transfer }
 
 class _TransactionScreenState extends State<TransactionScreen> {
   FilterType selectedFilter = FilterType.all;
@@ -80,6 +80,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
               _buildFilter("All", FilterType.all),
               _buildFilter("Income", FilterType.income),
               _buildFilter("Expense", FilterType.expense),
+              _buildFilter("Transfer", FilterType.transfer),
             ],
           ),
 
