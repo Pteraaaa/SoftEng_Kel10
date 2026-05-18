@@ -3,6 +3,7 @@ import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
 import 'package:myapp/Models/CategoryModel.dart';
 import 'package:myapp/Widgets/CategoryChip.dart';
+import 'CreateCategoryScreen.dart';
 import 'package:intl/intl.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -65,7 +66,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
             GestureDetector(
               onTap: () {
-                // open add category dialog
+                Navigator.push(
+                  context,
+
+                  MaterialPageRoute(
+                    builder: (_) => const CreateCategoryScreen(),
+                  ),
+                );
               },
 
               child: Container(
