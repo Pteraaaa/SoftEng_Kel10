@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
+import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/GoogleAuthService.dart';
-import 'package:myapp/Services/UserStore.dart';
+import 'package:myapp/Services/TokenStorage.dart';
 
 class LoginForm extends StatefulWidget {
-  const LoginForm({super.key});
+  final String? initialError;
+
+  const LoginForm({super.key, this.initialError});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -12,10 +15,25 @@ class LoginForm extends StatefulWidget {
 
 class _LoginFormState extends State<LoginForm> {
   bool isHidden = true;
+  bool isLoading = false;
+  String? loginError;
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    loginError = widget.initialError;
+  }
+
+  @override
+  void dispose() {
+    usernameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,24 +85,6 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return "Password is required";
-                }
-                if (value.length < 8) {
-                  return "Password must be 8 characters or longer";
-                }
-                if (!RegExp(r'[0-9]').hasMatch(value)) {
-                  return "Password must contain a number";
-                }
-                if (!RegExp(r'[A-Z]').hasMatch(value)) {
-                  return "Password must contain an uppercase letter";
-                }
-                if (!RegExp(r'[a-z]').hasMatch(value)) {
-                  return "Password must contain a lowercase letter";
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 20),
 
@@ -92,32 +92,63 @@ class _LoginFormState extends State<LoginForm> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final user = UserStore.login(
-                      usernameController.text,
-                      passwordController.text,
-                    );
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() {
+                            isLoading = true;
+                            loginError = null;
+                          });
 
-                    if (user != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => TemplateScreen(user: user),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Invalid email or password"),
-                        ),
-                      );
-                    }
-                  }
-                },
-                child: const Text("Login"),
+                          try {
+                            final authResult = await AuthService.loginLocal(
+                              username: usernameController.text,
+                              password: passwordController.text,
+                            );
+
+                            await TokenStorage.saveTokens(
+                              accessToken: authResult.accessToken,
+                              refreshToken: authResult.refreshToken,
+                            );
+
+                            final user = await AuthService.getMeWithRefresh();
+
+                            if (!context.mounted) return;
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => TemplateScreen(user: user),
+                              ),
+                            );
+                          } catch (error) {
+                            if (!mounted) return;
+                            if (error is TokenExpiredException) {
+                              await showSessionExpiredDialog(context);
+                              await TokenStorage.clear();
+                              return;
+                            }
+
+                            setState(() {
+                              loginError = error.toString();
+                            });
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          }
+                        }
+                      },
+                child: Text(isLoading ? "Logging in..." : "Login"),
               ),
             ),
+            if (loginError != null) ...[
+              const SizedBox(height: 8),
+              Text(loginError!, style: const TextStyle(color: Colors.red)),
+            ],
             SizedBox(height: 15),
 
             Row(
@@ -141,24 +172,12 @@ class _LoginFormState extends State<LoginForm> {
                 icon: Image.asset("assets/images/Google.png", height: 24),
                 label: const Text("Login with Google"),
                 onPressed: () async {
-                  final account = await GoogleAuthService.signIn();
-
-                  if (account != null) {
-                    final user = UserStore.loginWithGoogle(
-                      account.email,
-                      account.displayName ?? "Google User",
-                    );
-
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => TemplateScreen(user: user),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Google Login Failed")),
-                    );
+                  try {
+                    await GoogleAuthService.redirectToBackend();
+                  } catch (error) {
+                    setState(() {
+                      loginError = error.toString();
+                    });
                   }
                 },
               ),
@@ -166,6 +185,24 @@ class _LoginFormState extends State<LoginForm> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> showSessionExpiredDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Session Expired"),
+          content: const Text("Session Expired please login again"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
     );
   }
 }

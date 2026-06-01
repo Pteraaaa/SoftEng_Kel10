@@ -3,7 +3,9 @@ import '../Widgets/LoginForm.dart';
 import '../Widgets/SignUpForm.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final String? initialLoginError;
+
+  const AuthScreen({super.key, this.initialLoginError});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -89,7 +91,11 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             const SizedBox(height: 20),
 
-            Expanded(child: isLogin ? const LoginForm() : const SignUpForm()),
+            Expanded(
+              child: isLogin
+                  ? LoginForm(initialError: widget.initialLoginError)
+                  : const SignUpForm(),
+            ),
           ],
         ),
       ),
