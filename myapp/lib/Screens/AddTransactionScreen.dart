@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/WalletModel.dart';
-import 'package:myapp/Screens/TemplateScreen.dart';
 import 'package:myapp/Models/CategoryModel.dart';
 import 'package:myapp/Widgets/CategoryChip.dart';
 import 'CreateCategoryScreen.dart';
@@ -214,7 +213,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
                   const SizedBox(height: 30),
 
-                  /// FROM WALLET
                   DropdownButtonFormField<WalletModel>(
                     value: selectedWallet,
 

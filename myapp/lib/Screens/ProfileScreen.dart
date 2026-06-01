@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:myapp/Models/UsersModel.dart';
+import 'package:myapp/Screens/LoginSecurityScreen.dart';
+import 'package:myapp/Screens/PersonalInformationScreen.dart';
+import 'package:myapp/Services/AuthService.dart';
 
-///
-/// MODEL
-///
 class ProfileMenu {
   final String title;
   final IconData icon;
@@ -19,265 +21,289 @@ class ProfileMenu {
   });
 }
 
-///
-/// REPOSITORY
-/// Replace with API / Firebase later
-///
-class ProfileRepository {
-  Future<Map<String, dynamic>> fetchProfile() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    return {
-      "name": "John Doe",
-      "image": "https://i.pravatar.cc/300",
-      "currency": "IDR (Rp)",
-      "language": "English",
-    };
-  }
-
-  ///
-  /// ACCOUNT MENUS
-  ///
-  List<ProfileMenu> getAccountMenus() {
-    return [
-      ProfileMenu(
-        title: "Personal Information",
-        icon: Icons.person_outline,
-        iconColor: Colors.amber,
-      ),
-
-      ProfileMenu(
-        title: "Login & Security",
-        icon: Icons.shield_outlined,
-        iconColor: Colors.amber,
-      ),
-    ];
-  }
-
-  ///
-  /// PREFERENCE MENUS
-  ///
-  List<ProfileMenu> getPreferenceMenus({
-    required String currency,
-    required String language,
-  }) {
-    return [
-      ProfileMenu(
-        title: "Notifications",
-        icon: Icons.notifications_none,
-        iconColor: Colors.amber,
-      ),
-
-      ProfileMenu(
-        title: "Currency",
-        icon: Icons.currency_exchange,
-        iconColor: Colors.amber,
-        trailingText: currency,
-      ),
-
-      ProfileMenu(
-        title: "Language",
-        icon: Icons.language,
-        iconColor: Colors.amber,
-        trailingText: language,
-      ),
-    ];
-  }
-
-  ///
-  /// MODE MENUS
-  ///
-  List<ProfileMenu> getModeMenus() {
-    return [
-      ProfileMenu(
-        title: "Dark Mode",
-        icon: Icons.dark_mode_outlined,
-        iconColor: Colors.amber,
-      ),
-    ];
-  }
-}
-
-///
-/// PROFILE SCREEN
-///
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final UsersModel user;
+  final ValueChanged<UsersModel> onUserChanged;
+
+  const ProfileScreen({
+    required this.user,
+    required this.onUserChanged,
+    super.key,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ProfileRepository repository = ProfileRepository();
-
-  late Future<Map<String, dynamic>> profileFuture;
+  late UsersModel currentUser;
+  bool isChangingAvatar = false;
+  String? avatarError;
 
   @override
   void initState() {
     super.initState();
+    currentUser = widget.user;
+  }
 
-    profileFuture = repository.fetchProfile();
+  @override
+  void didUpdateWidget(covariant ProfileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user != widget.user) {
+      currentUser = widget.user;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: FutureBuilder<Map<String, dynamic>>(
-        future: profileFuture,
-        builder: (context, snapshot) {
-          ///
-          /// LOADING
-          ///
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          ///
-          /// ERROR
-          ///
-          if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
-          }
-
-          ///
-          /// DATA
-          ///
-          final data = snapshot.data ?? {};
-
-          final String name = data["name"] ?? "";
-
-          final String image = data["image"] ?? "";
-
-          final String currency = data["currency"] ?? "";
-
-          final String language = data["language"] ?? "";
-
-          final accountMenus = repository.getAccountMenus();
-
-          final preferenceMenus = repository.getPreferenceMenus(
-            currency: currency,
-            language: language,
-          );
-
-          final modeMenus = repository.getModeMenus();
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ///
-                /// HEADER
-                ///
-                const Center(
-                  child: Text(
-                    "Settings",
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                ///
-                /// PROFILE IMAGE
-                ///
-                Center(
-                  child: Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 55,
-                        backgroundColor: Colors.amber.shade200,
-                        backgroundImage: NetworkImage(image),
-                      ),
-
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 6,
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: () {},
-                            icon: const Icon(Icons.edit, size: 18),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                ///
-                /// NAME
-                ///
-                Center(
-                  child: Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                ///
-                /// ACCOUNT SECTION
-                ///
-                buildSectionTitle("ACCOUNT"),
-
-                const SizedBox(height: 10),
-
-                ProfileMenuCard(menus: accountMenus),
-
-                const SizedBox(height: 24),
-
-                ///
-                /// PREFERENCES
-                ///
-                buildSectionTitle("PREFERENCES"),
-
-                const SizedBox(height: 10),
-
-                ProfileMenuCard(menus: preferenceMenus),
-
-                const SizedBox(height: 24),
-
-                ///
-                /// MODE
-                ///
-                buildSectionTitle("MODE"),
-
-                const SizedBox(height: 10),
-
-                ProfileMenuCard(menus: modeMenus),
-
-                const SizedBox(height: 20),
-              ],
+    final accountMenus = [
+      ProfileMenu(
+        title: "Personal Information",
+        icon: Icons.person_outline,
+        iconColor: Colors.amber,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PersonalInformationScreen(
+                user: currentUser,
+                onUserChanged: updateCurrentUser,
+              ),
             ),
           );
         },
       ),
+      ProfileMenu(
+        title: "Login & Security",
+        icon: Icons.shield_outlined,
+        iconColor: Colors.amber,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  LoginSecurityScreen(
+                    user: currentUser,
+                    onUserChanged: updateCurrentUser,
+                  ),
+            ),
+          );
+        },
+      ),
+    ];
+
+    final preferenceMenus = [
+      const ProfileMenu(
+        title: "Notifications",
+        icon: Icons.notifications_none,
+        iconColor: Colors.amber,
+      ),
+      const ProfileMenu(
+        title: "Currency",
+        icon: Icons.currency_exchange,
+        iconColor: Colors.amber,
+        trailingText: "IDR (Rp)",
+      ),
+      const ProfileMenu(
+        title: "Language",
+        icon: Icons.language,
+        iconColor: Colors.amber,
+        trailingText: "English",
+      ),
+    ];
+
+    final modeMenus = [
+      const ProfileMenu(
+        title: "Dark Mode",
+        icon: Icons.dark_mode_outlined,
+        iconColor: Colors.amber,
+      ),
+    ];
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Center(
+              child: Text(
+                "Settings",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 55,
+                    backgroundColor: Colors.amber.shade200,
+                    backgroundImage: _profileImageProvider(
+                      currentUser.profileImage,
+                    ),
+                    child: currentUser.profileImage.isEmpty
+                        ? const Icon(
+                            Icons.person,
+                            size: 54,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: isChangingAvatar ? null : changeAvatar,
+                        icon: isChangingAvatar
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.edit, size: 18),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (avatarError != null) ...[
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  avatarError!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+            const SizedBox(height: 18),
+            Center(
+              child: Text(
+                currentUser.username.isEmpty ? "User" : currentUser.username,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Center(
+              child: Text(
+                currentUser.email,
+                style: TextStyle(color: Colors.grey.shade600),
+              ),
+            ),
+            const SizedBox(height: 30),
+            buildSectionTitle("ACCOUNT"),
+            const SizedBox(height: 10),
+            ProfileMenuCard(menus: accountMenus),
+            const SizedBox(height: 24),
+            buildSectionTitle("PREFERENCES"),
+            const SizedBox(height: 10),
+            ProfileMenuCard(menus: preferenceMenus),
+            const SizedBox(height: 24),
+            buildSectionTitle("MODE"),
+            const SizedBox(height: 10),
+            ProfileMenuCard(menus: modeMenus),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
     );
   }
 
-  ///
-  /// SECTION TITLE
-  ///
+  void updateCurrentUser(UsersModel user) {
+    setState(() {
+      currentUser = user;
+    });
+    widget.onUserChanged(user);
+  }
+
+  Future<void> changeAvatar() async {
+    final avatar = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (avatar == null) {
+      return;
+    }
+
+    setState(() {
+      isChangingAvatar = true;
+      avatarError = null;
+    });
+
+    try {
+      final avatarUrl = await AuthService.changeAvatarUrl(avatar);
+      if (!mounted) return;
+
+      updateCurrentUser(currentUser.copyWith(profileImage: avatarUrl));
+    } catch (error) {
+      if (!mounted) return;
+      if (error is TokenExpiredException) {
+        await showTokenExpiredAlert();
+        return;
+      }
+
+      setState(() {
+        avatarError = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isChangingAvatar = false;
+        });
+      }
+    }
+  }
+
+  Future<void> showTokenExpiredAlert() async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: const Text("Error"),
+          content: const Text(
+            "something wrong, maybe session is expired please login again",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  ImageProvider? _profileImageProvider(String image) {
+    if (image.isEmpty) {
+      return null;
+    }
+
+    if (image.startsWith("http")) {
+      return NetworkImage(image);
+    }
+
+    return NetworkImage("${AuthService.baseUrl}$image");
+  }
+
   Widget buildSectionTitle(String title) {
     return Text(
       title,
@@ -291,9 +317,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-///
-/// PROFILE MENU CARD
-///
 class ProfileMenuCard extends StatelessWidget {
   final List<ProfileMenu> menus;
 
@@ -314,7 +337,6 @@ class ProfileMenuCard extends StatelessWidget {
           return Column(
             children: [
               ProfileMenuTile(menu: menu),
-
               if (index != menus.length - 1)
                 Divider(height: 1, color: Colors.grey.shade200),
             ],
@@ -325,9 +347,6 @@ class ProfileMenuCard extends StatelessWidget {
   }
 }
 
-///
-/// MENU TILE
-///
 class ProfileMenuTile extends StatelessWidget {
   final ProfileMenu menu;
 
@@ -337,31 +356,19 @@ class ProfileMenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-
-      ///
-      /// ICON
-      ///
       leading: Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: menu.iconColor.withOpacity(0.12),
+          color: menu.iconColor.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(menu.icon, color: menu.iconColor),
       ),
-
-      ///
-      /// TITLE
-      ///
       title: Text(
         menu.title,
         style: const TextStyle(fontWeight: FontWeight.w500),
       ),
-
-      ///
-      /// TRAILING
-      ///
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -370,13 +377,10 @@ class ProfileMenuTile extends StatelessWidget {
               menu.trailingText!,
               style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
             ),
-
           const SizedBox(width: 6),
-
           Icon(Icons.chevron_right, color: Colors.grey.shade400),
         ],
       ),
-
       onTap: menu.onTap,
     );
   }

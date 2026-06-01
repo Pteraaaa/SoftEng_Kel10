@@ -17,19 +17,33 @@ class TemplateScreen extends StatefulWidget {
 
 class _TemplateScreenState extends State<TemplateScreen> {
   int _selectedIndex = 0;
+  late UsersModel _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = widget.user;
+  }
 
   Widget _getScreen() {
     switch (_selectedIndex) {
       case 0:
-        return HomeScreen(user: widget.user);
+        return HomeScreen(user: _user);
       case 1:
         return TransactionScreen();
       case 2:
         return AnalyticsScreen();
       case 3:
-        return ProfileScreen();
+        return ProfileScreen(
+          user: _user,
+          onUserChanged: (user) {
+            setState(() {
+              _user = user;
+            });
+          },
+        );
       default:
-        return HomeScreen(user: widget.user);
+        return HomeScreen(user: _user);
     }
   }
 
