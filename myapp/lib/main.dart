@@ -9,6 +9,8 @@ void main() {
   runApp(const MainApp());
 }
 
+const appBackgroundColor = Color(0xFFFAF9F6);
+
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
@@ -19,6 +21,10 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: "Pocket Log",
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        scaffoldBackgroundColor: appBackgroundColor,
+        canvasColor: appBackgroundColor,
+      ),
       home: authCode == null
           ? const AuthGate()
           : AuthCallbackScreen(authCode: authCode),

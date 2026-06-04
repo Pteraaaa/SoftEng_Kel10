@@ -23,14 +23,9 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             const SizedBox(height: 20),
 
-            const Text(
-              "Welcome Back",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-
             const SizedBox(height: 20),
 
-            Image.asset("assets/images/logo.jpg", width: 400, height: 122),
+            Image.asset("assets/images/logo.png", width: 400, height: 122),
 
             const SizedBox(height: 20),
 

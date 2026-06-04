@@ -31,7 +31,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF7FE),
+      backgroundColor: const Color(0xFFFAF9F6),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(18),
