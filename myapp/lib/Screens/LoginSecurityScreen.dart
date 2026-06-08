@@ -113,7 +113,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF7FE),
+      backgroundColor: const Color(0xFFFAF9F6),
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())

@@ -61,16 +61,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: "Personal Information",
         icon: Icons.person_outline,
         iconColor: Colors.amber,
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          final updatedUser = await Navigator.push<UsersModel>(
             context,
             MaterialPageRoute(
               builder: (_) => PersonalInformationScreen(
                 user: currentUser,
-                onUserChanged: updateCurrentUser,
               ),
             ),
           );
+
+          if (!mounted || updatedUser == null) {
+            return;
+          }
+
+          updateCurrentUser(updatedUser);
         },
       ),
       ProfileMenu(

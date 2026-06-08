@@ -4,11 +4,9 @@ import 'package:myapp/Services/AuthService.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   final UsersModel user;
-  final ValueChanged<UsersModel> onUserChanged;
 
   const PersonalInformationScreen({
     required this.user,
-    required this.onUserChanged,
     super.key,
   });
 
@@ -19,19 +17,35 @@ class PersonalInformationScreen extends StatefulWidget {
 
 class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   late UsersModel currentUser;
+  late final TextEditingController nameController;
   String? pageError;
+  String? nameError;
   bool isUpdating = false;
+  bool isEditingName = false;
+  bool isSavingName = false;
 
   @override
   void initState() {
     super.initState();
     currentUser = widget.user;
+    nameController = TextEditingController(text: currentUser.username);
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF7FE),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.pop(context, currentUser);
+        return false;
+      },
+      child: Scaffold(
+      backgroundColor: const Color(0xFFFAF9F6),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(18),
@@ -41,7 +55,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(context, currentUser),
                     icon: const Icon(Icons.arrow_back),
                   ),
                   const Expanded(
@@ -65,15 +79,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
               ],
               InfoPanel(
                 children: [
-                  EditableInfoTile(
-                    icon: Icons.person_outline,
-                    label: "Name",
-                    value: currentUser.username.isEmpty
-                        ? "-"
-                        : currentUser.username,
-                    isUpdating: isUpdating,
-                    onTap: openChangeNameDialog,
-                  ),
+                  buildNameTile(),
                   EditableInfoTile(
                     icon: Icons.wc_outlined,
                     label: "Gender",
@@ -99,64 +105,133 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
-  Future<void> openChangeNameDialog() async {
-    final controller = TextEditingController(text: currentUser.username);
-    String? error;
+  Widget buildNameTile() {
+    if (!isEditingName) {
+      return EditableInfoTile(
+        icon: Icons.person_outline,
+        label: "Name",
+        value: currentUser.username.isEmpty ? "-" : currentUser.username,
+        isUpdating: isUpdating || isSavingName,
+        onTap: () {
+          setState(() {
+            nameController.text = currentUser.username;
+            nameError = null;
+            isEditingName = true;
+          });
+        },
+      );
+    }
 
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text("Change Name"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(labelText: "Name"),
-                  ),
-                  if (error != null) ...[
-                    const SizedBox(height: 8),
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                  ],
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text("Cancel"),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: Colors.amber.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                TextButton(
-                  onPressed: () async {
-                    final name = controller.text.trim();
-                    final success = await changeName(
-                      name,
-                      onError: (message) {
-                        setDialogState(() {
-                          error = message;
+                child: const Icon(Icons.person_outline, color: Colors.amber),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  "Name",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: nameController,
+            enabled: !isSavingName,
+            decoration: const InputDecoration(
+              labelText: "Name",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          if (nameError != null) ...[
+            const SizedBox(height: 8),
+            Text(nameError!, style: const TextStyle(color: Colors.red)),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: isSavingName
+                    ? null
+                    : () {
+                        setState(() {
+                          nameController.text = currentUser.username;
+                          nameError = null;
+                          isEditingName = false;
                         });
                       },
-                    );
-
-                    if (success && dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-                  },
-                  child: const Text("Save"),
-                ),
-              ],
-            );
-          },
-        );
-      },
+                child: const Text("Cancel"),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: isSavingName ? null : saveInlineName,
+                child: Text(isSavingName ? "Saving..." : "Save"),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
+  }
 
-    controller.dispose();
+  Future<void> saveInlineName() async {
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      setState(() {
+        nameError = "Name is required";
+      });
+      return;
+    }
+
+    setState(() {
+      isSavingName = true;
+      nameError = null;
+      pageError = null;
+    });
+
+    try {
+      final updatedName = await AuthService.changeName(name);
+      if (!mounted) return;
+
+      setState(() {
+        currentUser = currentUser.copyWith(username: updatedName);
+        nameController.text = updatedName;
+        isEditingName = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      if (error is TokenExpiredException) {
+        await showTokenExpiredAlert();
+      } else {
+        setState(() {
+          nameError = error.toString();
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSavingName = false;
+        });
+      }
+    }
   }
 
   Future<void> openChangeGenderDialog() async {
@@ -169,8 +244,9 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
       genderOptions.add(selectedGender);
     }
     String? error;
+    bool isSaving = false;
 
-    await showDialog<void>(
+    final updatedGender = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         return StatefulBuilder(
@@ -210,8 +286,13 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   child: const Text("Cancel"),
                 ),
                 TextButton(
-                  onPressed: () async {
-                    final success = await changeGender(
+                  onPressed: isSaving ? null : () async {
+                    setDialogState(() {
+                      isSaving = true;
+                      error = null;
+                    });
+
+                    final updatedGender = await changeGender(
                       selectedGender,
                       onError: (message) {
                         setDialogState(() {
@@ -220,11 +301,18 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                       },
                     );
 
-                    if (success && dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
+                    if (updatedGender != null && dialogContext.mounted) {
+                      Navigator.pop(dialogContext, updatedGender);
+                      return;
+                    }
+
+                    if (dialogContext.mounted) {
+                      setDialogState(() {
+                        isSaving = false;
+                      });
                     }
                   },
-                  child: const Text("Save"),
+                  child: Text(isSaving ? "Saving..." : "Save"),
                 ),
               ],
             );
@@ -232,6 +320,10 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         );
       },
     );
+
+    if (updatedGender != null && mounted) {
+      updateCurrentUser(currentUser.copyWith(gender: updatedGender));
+    }
   }
 
   Future<void> openChangeDobDialog() async {
@@ -249,67 +341,43 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     await changeDob(formatDate(picked));
   }
 
-  Future<bool> changeName(
+  Future<String?> changeName(
     String name, {
     required ValueChanged<String> onError,
   }) async {
-    setState(() {
-      isUpdating = true;
-      pageError = null;
-    });
-
     try {
       final updatedName = await AuthService.changeName(name);
-      if (!mounted) return false;
+      if (!mounted) return null;
 
-      updateCurrentUser(currentUser.copyWith(username: updatedName));
-      return true;
+      return updatedName;
     } catch (error) {
-      if (!mounted) return false;
+      if (!mounted) return null;
       if (error is TokenExpiredException) {
         await showTokenExpiredAlert();
       } else {
         onError(error.toString());
       }
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() {
-          isUpdating = false;
-        });
-      }
+      return null;
     }
   }
 
-  Future<bool> changeGender(
+  Future<String?> changeGender(
     String gender, {
     required ValueChanged<String> onError,
   }) async {
-    setState(() {
-      isUpdating = true;
-      pageError = null;
-    });
-
     try {
       final updatedGender = await AuthService.changeGender(gender);
-      if (!mounted) return false;
+      if (!mounted) return null;
 
-      updateCurrentUser(currentUser.copyWith(gender: updatedGender));
-      return true;
+      return updatedGender;
     } catch (error) {
-      if (!mounted) return false;
+      if (!mounted) return null;
       if (error is TokenExpiredException) {
         await showTokenExpiredAlert();
       } else {
         onError(error.toString());
       }
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() {
-          isUpdating = false;
-        });
-      }
+      return null;
     }
   }
 
@@ -346,7 +414,6 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
     setState(() {
       currentUser = user;
     });
-    widget.onUserChanged(user);
   }
 
   Future<void> showTokenExpiredAlert() async {
