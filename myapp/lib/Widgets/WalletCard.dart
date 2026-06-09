@@ -4,8 +4,9 @@ import 'package:intl/intl.dart';
 class WalletCard extends StatefulWidget {
   final String title;
   final String code;
-  final int balance;
+  final num balance;
   final int index;
+  final String colorHex;
 
   const WalletCard({
     super.key,
@@ -13,6 +14,7 @@ class WalletCard extends StatefulWidget {
     required this.code,
     required this.balance,
     required this.index,
+    this.colorHex = "",
   });
 
   @override
@@ -27,7 +29,6 @@ class _WalletCardState extends State<WalletCard> {
   ];
 
   bool hideCard = true;
-  bool hideBalance = true;
 
   final formatter = NumberFormat.currency(
     locale: "id_ID",
@@ -37,18 +38,20 @@ class _WalletCardState extends State<WalletCard> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = cardGradients[widget.index % cardGradients.length];
+    final baseColor = _parseColor(widget.colorHex);
+    final colors = widget.colorHex.isEmpty
+        ? cardGradients[widget.index % cardGradients.length]
+        : [baseColor, Color.lerp(baseColor, Colors.black, 0.28)!];
 
     return Container(
       width: 200,
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
-
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colors,
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -56,91 +59,89 @@ class _WalletCardState extends State<WalletCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.credit_card, color: Colors.white.withOpacity(0.5)),
-                  const SizedBox(height: 5),
-                  Text(
-                    widget.title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.normal,
-                      fontSize: 10,
-                    ),
-                  ),
-                ],
-              ),
-              IconButton(
-                onPressed: () {},
-                icon: Icon(Icons.delete, color: Colors.white),
-              ),
-            ],
-          ),
-
-          Row(
-            children: [
-              Text(
-                hideCard
-                    ? "**** ${widget.code.substring(widget.code.length - 4)}"
-                    : widget.code,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.16),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white.withOpacity(0.82),
+                  size: 18,
                 ),
               ),
-
-              const SizedBox(width: 15),
-
-              IconButton(
-                onPressed: () {
+              const Spacer(),
+              const Icon(Icons.more_horiz, color: Colors.white, size: 22),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            widget.title.isEmpty ? "Wallet" : widget.title,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  hideCard ? "**** ${_lastFourDigits()}" : widget.code,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.88),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
                   setState(() {
                     hideCard = !hideCard;
                   });
                 },
-                icon: hideCard
-                    ? Icon(Icons.visibility)
-                    : Icon(Icons.visibility_off),
-                color: Colors.white,
-                iconSize: 20,
+                child: Icon(
+                  hideCard ? Icons.visibility : Icons.visibility_off,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ],
           ),
-
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                hideBalance ? "Rp. ••••••" : formatter.format(widget.balance),
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-
-              const SizedBox(width: 15),
-
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    hideBalance = !hideBalance;
-                  });
-                },
-                icon: hideBalance
-                    ? Icon(Icons.visibility)
-                    : Icon(Icons.visibility_off),
+          const Spacer(),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              formatter.format(widget.balance),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
-                iconSize: 20,
               ),
-            ],
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _lastFourDigits() {
+    if (widget.code.length <= 4) return widget.code;
+    return widget.code.substring(widget.code.length - 4);
+  }
+
+  Color _parseColor(String value) {
+    final hex = value.replaceFirst("#", "");
+    final parsed = int.tryParse(hex.length == 6 ? "FF$hex" : hex, radix: 16);
+    return parsed == null ? const Color(0xFF1E3A5F) : Color(parsed);
   }
 }

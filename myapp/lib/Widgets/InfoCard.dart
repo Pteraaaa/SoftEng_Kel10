@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 
 class Infocard extends StatelessWidget {
   final String title;
-  final int amount;
+  final num amount;
   final IconData icon;
   final Color iconColor;
   final Color backgroundColor;

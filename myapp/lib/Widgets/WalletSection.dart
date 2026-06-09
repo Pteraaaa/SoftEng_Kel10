@@ -67,6 +67,7 @@ class WalletSection extends StatelessWidget {
                       code: wallet.code,
                       balance: wallet.balance,
                       index: index,
+                      colorHex: wallet.colorHex,
                     ),
                   );
                 },

@@ -17,12 +17,13 @@ class TransactionSection extends StatelessWidget {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
 
         if (transactions.isEmpty)
           const Center(child: Text("There are no transactions"))
         else
           ListView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: transactions.length,

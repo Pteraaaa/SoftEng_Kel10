@@ -6,6 +6,7 @@ import 'AnalyticsScreen.dart';
 import 'ProfileScreen.dart';
 import 'TransactionScreen.dart';
 import 'AddTransactionScreen.dart';
+import 'AddNotificationScreen.dart';
 
 class TemplateScreen extends StatefulWidget {
   final UsersModel user;
@@ -30,7 +31,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
       case 0:
         return HomeScreen(user: _user);
       case 1:
-        return TransactionScreen();
+        return const TransactionScreen();
       case 2:
         return AnalyticsScreen();
       case 3:
@@ -53,61 +54,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
       body: _getScreen(),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            builder: (context) {
-              return Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "Choose Option",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    ListTile(
-                      leading: const Icon(Icons.attach_money),
-                      title: const Text("Transaction"),
-                      onTap: () {
-                        Navigator.pop(context);
-
-                        // Navigate or do something
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AddTransactionScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    ListTile(
-                      leading: const Icon(Icons.notifications),
-                      title: const Text("Notification"),
-                      onTap: () {
-                        Navigator.pop(context);
-
-                        // Navigate or do something
-                        print("Notification Selected");
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          );
-        },
-
+        onPressed: _openCreateMenu,
         backgroundColor: Colors.amber,
         child: const Icon(Icons.add, color: Colors.black),
       ),
@@ -120,6 +67,147 @@ class _TemplateScreenState extends State<TemplateScreen> {
             _selectedIndex = index;
           });
         },
+      ),
+    );
+  }
+
+  Future<void> _openCreateMenu() async {
+    final action = await showModalBottomSheet<_CreateAction>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                "Create New",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Add a transaction or schedule a reminder.",
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
+              const SizedBox(height: 18),
+              _CreateMenuItem(
+                icon: Icons.receipt_long_outlined,
+                title: "Transaction",
+                subtitle: "Income, expense, or wallet transfer",
+                color: Colors.amber,
+                onTap: () => Navigator.pop(context, _CreateAction.transaction),
+              ),
+              const SizedBox(height: 12),
+              _CreateMenuItem(
+                icon: Icons.notifications_active_outlined,
+                title: "Notification",
+                subtitle: "Create a wallet reminder",
+                color: const Color(0xFF2563EB),
+                onTap: () => Navigator.pop(context, _CreateAction.notification),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (!mounted || action == null) return;
+
+    if (action == _CreateAction.transaction) {
+      final created = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => const AddTransactionScreen()),
+      );
+      if (created == true && mounted) {
+        setState(() {});
+      }
+      return;
+    }
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddNotificationScreen()),
+    );
+  }
+}
+
+enum _CreateAction { transaction, notification }
+
+class _CreateMenuItem extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _CreateMenuItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.16),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
       ),
     );
   }

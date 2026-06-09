@@ -17,6 +17,8 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = _parseColor(category.colorHex);
+
     return GestureDetector(
       onTap: onTap,
 
@@ -24,11 +26,9 @@ class CategoryChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 
         decoration: BoxDecoration(
-          color: isSelected ? Colors.amber : Colors.white,
+          color: isSelected ? color : Colors.white,
 
-          border: Border.all(
-            color: isSelected ? Colors.amber : Colors.grey.shade300,
-          ),
+          border: Border.all(color: isSelected ? color : Colors.grey.shade300),
 
           borderRadius: BorderRadius.circular(30),
         ),
@@ -58,5 +58,11 @@ class CategoryChip extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _parseColor(String value) {
+    final hex = value.replaceFirst("#", "");
+    final parsed = int.tryParse(hex.length == 6 ? "FF$hex" : hex, radix: 16);
+    return parsed == null ? Colors.amber : Color(parsed);
   }
 }
