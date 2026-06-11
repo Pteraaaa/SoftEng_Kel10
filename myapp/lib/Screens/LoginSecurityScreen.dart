@@ -8,6 +8,7 @@ import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/GoogleAuthService.dart';
 import 'package:myapp/Services/TokenStorage.dart';
 import 'package:myapp/Widgets/GoogleWebSignInButton.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class LoginSecurityScreen extends StatefulWidget {
   final UsersModel user;
@@ -59,10 +60,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     googleAccountSubscription = GoogleAuthService.onCurrentUserChanged.listen((
       account,
     ) async {
-      if (!kIsWeb ||
-          account == null ||
-          googleBound ||
-          isGoogleActionLoading) {
+      if (!kIsWeb || account == null || googleBound || isGoogleActionLoading) {
         return;
       }
 
@@ -88,6 +86,9 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     try {
       final auth = await AuthService.checkAuth();
       final providerStatus = await AuthService.checkProviderStatus();
+      if (!providerStatus.googleBound) {
+        await GoogleAuthService.clearSelectedAccount();
+      }
 
       if (!mounted) return;
 
@@ -113,7 +114,6 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF9F6),
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -251,6 +251,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     bool isSendingOtp = false;
     bool isConfirming = false;
     bool dialogClosed = false;
+    UsersModel? updatedUserAfterDialog;
 
     await showDialog<void>(
       context: context,
@@ -293,7 +294,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   otpRequestError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isSendingOtp = false;
                   });
@@ -334,12 +335,9 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                       : updatedEmail,
                 );
 
-                setState(() {
-                  currentUser = updatedUser;
-                });
-                widget.onUserChanged(updatedUser);
                 if (!dialogContext.mounted) return;
                 dialogClosed = true;
+                updatedUserAfterDialog = updatedUser;
                 Navigator.pop(dialogContext);
               } catch (error) {
                 if (!mounted) return;
@@ -354,7 +352,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   confirmError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isConfirming = false;
                   });
@@ -404,8 +402,18 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
       },
     );
 
-    newEmailController.dispose();
-    otpController.dispose();
+    disposeDialogControllersAfterRouteAnimation([
+      newEmailController,
+      otpController,
+    ]);
+
+    final updatedUser = updatedUserAfterDialog;
+    if (updatedUser != null && mounted) {
+      setState(() {
+        currentUser = updatedUser;
+      });
+      widget.onUserChanged(updatedUser);
+    }
   }
 
   Future<void> openChangePasswordDialog() async {
@@ -419,6 +427,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     bool isSendingOtp = false;
     bool isConfirming = false;
     bool dialogClosed = false;
+    bool passwordChanged = false;
 
     await showDialog<void>(
       context: context,
@@ -455,7 +464,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   otpRequestError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isSendingOtp = false;
                   });
@@ -489,15 +498,11 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   newPassword: newPasswordController.text,
                   challengeToken: challengeToken!,
                 );
-                final refreshedUser = await AuthService.getMeWithRefresh();
                 if (!mounted) return;
 
-                setState(() {
-                  currentUser = refreshedUser;
-                });
-                widget.onUserChanged(refreshedUser);
                 if (!dialogContext.mounted) return;
                 dialogClosed = true;
+                passwordChanged = true;
                 Navigator.pop(dialogContext);
               } catch (error) {
                 if (!mounted) return;
@@ -512,7 +517,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   confirmError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isConfirming = false;
                   });
@@ -570,9 +575,31 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
       },
     );
 
-    oldPasswordController.dispose();
-    newPasswordController.dispose();
-    otpController.dispose();
+    disposeDialogControllersAfterRouteAnimation([
+      oldPasswordController,
+      newPasswordController,
+      otpController,
+    ]);
+
+    if (passwordChanged && mounted) {
+      try {
+        final refreshedUser = await AuthService.getMeWithRefresh();
+        if (!mounted) return;
+        setState(() {
+          currentUser = refreshedUser;
+        });
+        widget.onUserChanged(refreshedUser);
+      } catch (error) {
+        if (!mounted) return;
+        if (error is TokenExpiredException) {
+          await handleSessionExpired();
+          return;
+        }
+        setState(() {
+          pageError = error.toString();
+        });
+      }
+    }
   }
 
   Future<void> openDeleteAccountDialog() async {
@@ -585,6 +612,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     bool isSendingOtp = false;
     bool isConfirming = false;
     bool dialogClosed = false;
+    bool accountDeleted = false;
 
     await showDialog<void>(
       context: context,
@@ -621,7 +649,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   otpRequestError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isSendingOtp = false;
                   });
@@ -657,8 +685,8 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                 if (!mounted) return;
                 if (!dialogContext.mounted) return;
                 dialogClosed = true;
+                accountDeleted = true;
                 Navigator.pop(dialogContext);
-                goToLogin();
               } catch (error) {
                 if (!mounted) return;
                 if (error is TokenExpiredException) {
@@ -672,7 +700,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   confirmError = error.toString();
                 });
               } finally {
-                if (mounted && !dialogClosed) {
+                if (mounted && dialogContext.mounted && !dialogClosed) {
                   setDialogState(() {
                     isConfirming = false;
                   });
@@ -725,8 +753,14 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
       },
     );
 
-    passwordController.dispose();
-    otpController.dispose();
+    disposeDialogControllersAfterRouteAnimation([
+      passwordController,
+      otpController,
+    ]);
+
+    if (accountDeleted && mounted) {
+      goToLogin();
+    }
   }
 
   Future<void> bindCurrentGoogleAccount(String googleIdToken) async {
@@ -740,9 +774,15 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
 
       if (!mounted) return;
 
+      final providerStatus = await AuthService.checkProviderStatus();
+      final refreshedUser = await AuthService.getMeWithRefresh();
+      if (!mounted) return;
+
       setState(() {
-        googleBound = true;
+        googleBound = providerStatus.googleBound;
+        currentUser = refreshedUser;
       });
+      widget.onUserChanged(refreshedUser);
     } catch (error) {
       if (!mounted) return;
       if (error is TokenExpiredException) {
@@ -793,20 +833,29 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
 
         if (shouldGoToLoginAfterUnbind || result.accountDeleted) {
           await TokenStorage.clear();
+          await GoogleAuthService.clearSelectedAccount();
           if (!mounted) return;
           goToLogin();
           return;
         }
+        await GoogleAuthService.clearSelectedAccount();
       } else {
+        await GoogleAuthService.clearSelectedAccount();
         final googleIdToken = await GoogleAuthService.getGoogleIdToken();
         await AuthService.bindGoogle(googleIdToken);
       }
 
       if (!mounted) return;
 
+      final providerStatus = await AuthService.checkProviderStatus();
+      final refreshedUser = await AuthService.getMeWithRefresh();
+      if (!mounted) return;
+
       setState(() {
-        googleBound = !googleBound;
+        googleBound = providerStatus.googleBound;
+        currentUser = refreshedUser;
       });
+      widget.onUserChanged(refreshedUser);
     } catch (error) {
       if (!mounted) return;
       if (error is TokenExpiredException) {
@@ -912,6 +961,16 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
       (_) => false,
     );
   }
+
+  void disposeDialogControllersAfterRouteAnimation(
+    List<TextEditingController> controllers,
+  ) {
+    Future<void>.delayed(const Duration(milliseconds: 400), () {
+      for (final controller in controllers) {
+        controller.dispose();
+      }
+    });
+  }
 }
 
 class SectionTitle extends StatelessWidget {
@@ -942,7 +1001,7 @@ class SecurityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -988,43 +1047,49 @@ class SecurityActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accentColor = danger ? Colors.red : Colors.amber;
-    final textColor = disabled ? Colors.grey : Colors.black87;
+    final textColor = disabled
+        ? Colors.grey
+        : Theme.of(context).textTheme.bodyLarge?.color;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: accentColor.withValues(alpha: disabled ? 0.06 : 0.14),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: disabled ? Colors.grey : accentColor),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          subtitle,
-          style: TextStyle(
-            color: disabled ? Colors.grey : Colors.grey.shade600,
+    return HoverTapScale(
+      onTap: disabled || isLoading || trailing != null ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: disabled ? 0.06 : 0.14),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Icon(icon, color: disabled ? Colors.grey : accentColor),
         ),
-      ),
-      trailing:
-          trailing ??
-          TextButton(
-            onPressed: disabled || isLoading ? null : onTap,
-            child: Text(
-              actionLabel,
-              style: TextStyle(
-                color: danger ? Colors.red : Colors.amber.shade800,
-              ),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            subtitle,
+            style: TextStyle(
+              color: disabled ? Colors.grey : Colors.grey.shade600,
             ),
           ),
+        ),
+        trailing:
+            trailing ??
+            TextButton(
+              onPressed: disabled || isLoading ? null : onTap,
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                  color: danger ? Colors.red : Colors.amber.shade800,
+                ),
+              ),
+            ),
+      ),
     );
   }
 }

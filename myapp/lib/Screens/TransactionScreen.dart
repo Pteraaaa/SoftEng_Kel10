@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
+import 'package:myapp/Screens/TransactionDetailScreen.dart';
+import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 import 'package:myapp/Widgets/TransactionCard.dart';
 
 class TransactionScreen extends StatefulWidget {
@@ -13,108 +17,72 @@ enum FilterType { all, income, expense, transfer }
 
 class _TransactionScreenState extends State<TransactionScreen> {
   FilterType selectedFilter = FilterType.all;
+  DateTime? selectedDate;
+  List<TransactionModel> transactions = [];
+  bool isLoading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final transactions = [
-      TransactionModel(
-        title: "Whole Foods Market",
-        category: "Shopping",
-        amount: 150000,
-        date: DateTime.now(),
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: "Freelance Project",
-        category: "Salary",
-        amount: 2500000,
-        date: DateTime.now(),
-        isExpense: false,
-      ),
-      TransactionModel(
-        title: "Uber Ride",
-        category: "Transport",
-        amount: 50000,
-        date: DateTime.now(),
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: "Netflix Subscription",
-        category: "Entertainment",
-        amount: 120000,
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        isExpense: true,
-      ),
-      TransactionModel(
-        title: "Dinner at Mario's",
-        category: "Food",
-        amount: 200000,
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        isExpense: true,
-      ),
-    ];
-
-    final filtered = _getFiltered(transactions);
+    final groupedTransactions = _groupByDay(transactions);
 
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 "Transaction",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
               ),
-              IconButton(onPressed: () {}, icon: Icon(Icons.calendar_today)),
+              IconButton(
+                onPressed: _pickDate,
+                icon: Icon(
+                  selectedDate == null
+                      ? Icons.calendar_today_outlined
+                      : Icons.event_available,
+                ),
+              ),
             ],
           ),
-
-          const SizedBox(height: 16),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildFilter("All", FilterType.all),
-              _buildFilter("Income", FilterType.income),
-              _buildFilter("Expense", FilterType.expense),
-              _buildFilter("Transfer", FilterType.transfer),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          Expanded(
-            child: ListView(
+          if (selectedDate != null) ...[
+            const SizedBox(height: 8),
+            _DateFilterPill(
+              date: selectedDate!,
+              onClear: () {
+                setState(() {
+                  selectedDate = null;
+                });
+                _loadTransactions();
+              },
+            ),
+          ],
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                _sectionTitle("TODAY"),
-                ...filtered
-                    .where((t) => _isToday(t.date))
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => TransactionCard(
-                        transaction: entry.value,
-                        index: entry.key,
-                      ),
-                    ),
-
-                _sectionTitle("YESTERDAY"),
-                ...filtered
-                    .where((t) => _isYesterday(t.date))
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => TransactionCard(
-                        transaction: entry.value,
-                        index: entry.key,
-                      ),
-                    ),
+                _buildFilter("All", FilterType.all),
+                _buildFilter("Income", FilterType.income),
+                _buildFilter("Expense", FilterType.expense),
+                _buildFilter("Transfer", FilterType.transfer),
               ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _loadTransactions,
+              child: _buildContent(groupedTransactions),
             ),
           ),
         ],
@@ -122,23 +90,163 @@ class _TransactionScreenState extends State<TransactionScreen> {
     );
   }
 
-  bool _isToday(DateTime date) {
-    final now = DateTime.now();
-    return date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+  Widget _buildContent(Map<String, List<TransactionModel>> grouped) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (errorMessage != null) {
+      return ListView(
+        children: [
+          const SizedBox(height: 120),
+          Icon(Icons.error_outline, color: Colors.red.shade500, size: 36),
+          const SizedBox(height: 10),
+          Text(errorMessage!, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Center(
+            child: OutlinedButton(
+              onPressed: _loadTransactions,
+              child: const Text("Try Again"),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (grouped.isEmpty) {
+      return ListView(
+        children: const [
+          SizedBox(height: 140),
+          Center(child: Text("There are no transactions")),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.zero,
+      itemCount: grouped.length,
+      itemBuilder: (context, groupIndex) {
+        final day = grouped.keys.elementAt(groupIndex);
+        final items = grouped[day]!;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sectionTitle(day),
+            ...items.asMap().entries.map(
+              (entry) => TransactionCard(
+                transaction: entry.value,
+                index: entry.key,
+                onTap: () => _openDetail(entry.value.id),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  bool _isYesterday(DateTime date) {
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return date.year == yesterday.year &&
-        date.month == yesterday.month &&
-        date.day == yesterday.day;
+  Future<void> _loadTransactions() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final fetched = selectedDate == null
+          ? await AuthService.getTransactions(type: _selectedTypeQuery())
+          : await AuthService.getTransactionsByDate(
+              DateFormat("yyyy-MM-dd").format(selectedDate!),
+            );
+
+      final filtered = selectedDate == null
+          ? fetched
+          : fetched.where((item) {
+              final type = _selectedTypeQuery();
+              return type == null || item.type == type;
+            }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        transactions = filtered;
+      });
+    } on ApiException catch (err) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = err.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        errorMessage = "Failed to load transactions";
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      selectedDate = picked;
+    });
+    await _loadTransactions();
+  }
+
+  Future<void> _openDetail(String id) async {
+    if (id.isEmpty) return;
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionDetailScreen(transactionId: id),
+      ),
+    );
+    if (changed == true) _loadTransactions();
+  }
+
+  String? _selectedTypeQuery() {
+    switch (selectedFilter) {
+      case FilterType.income:
+        return "income";
+      case FilterType.expense:
+        return "expense";
+      case FilterType.transfer:
+        return "transfer";
+      case FilterType.all:
+        return null;
+    }
+  }
+
+  Map<String, List<TransactionModel>> _groupByDay(
+    List<TransactionModel> items,
+  ) {
+    final grouped = <String, List<TransactionModel>>{};
+
+    for (final transaction in items) {
+      final day = transaction.day.isEmpty
+          ? DateFormat.yMMMd().format(transaction.date)
+          : transaction.day.toUpperCase();
+      grouped.putIfAbsent(day, () => []).add(transaction);
+    }
+
+    return grouped;
   }
 
   static Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.only(top: 8, bottom: 8),
       child: Text(
         title,
         style: TextStyle(
@@ -153,38 +261,67 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Widget _buildFilter(String text, FilterType type) {
     final isActive = selectedFilter == type;
 
-    return GestureDetector(
+    return HoverTapScale(
       onTap: () {
         setState(() {
           selectedFilter = type;
+          selectedDate = null;
         });
+        _loadTransactions();
       },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Colors.amber : Colors.grey.shade200,
+          color: isActive
+              ? Colors.amber
+              : Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           text,
           style: TextStyle(
             color: isActive ? Colors.black : Colors.grey,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
   }
+}
 
-  List<TransactionModel> _getFiltered(List<TransactionModel> transaction) {
-    switch (selectedFilter) {
-      case FilterType.income:
-        return transaction.where((t) => !t.isExpense).toList();
-      case FilterType.expense:
-        return transaction.where((t) => t.isExpense).toList();
-      default:
-        return transaction;
-    }
+class _DateFilterPill extends StatelessWidget {
+  final DateTime date;
+  final VoidCallback onClear;
+
+  const _DateFilterPill({required this.date, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFFFC107).withOpacity(0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.calendar_today_outlined, size: 14),
+          const SizedBox(width: 8),
+          Text(DateFormat.yMMMd().format(date)),
+          const SizedBox(width: 8),
+          HoverTapScale(
+            onTap: onClear,
+            borderRadius: BorderRadius.circular(999),
+            child: const Icon(Icons.close, size: 16),
+          ),
+        ],
+      ),
+    );
   }
 }

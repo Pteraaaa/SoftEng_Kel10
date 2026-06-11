@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class CreateCategoryScreen extends StatefulWidget {
   const CreateCategoryScreen({super.key});
@@ -8,233 +10,291 @@ class CreateCategoryScreen extends StatefulWidget {
 }
 
 class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
-  final TextEditingController categoryController = TextEditingController(
-    text: "Groceries",
-  );
-
+  final categoryController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
   int selectedColorIndex = 0;
   int selectedIconIndex = 0;
+  bool isSubmitting = false;
+  String? errorMessage;
 
-  final List<Color> colors = [
-    Colors.amber,
-    Colors.blue,
-    Colors.red,
-    const Color(0xFFEAB308),
-    Colors.purple,
-    Colors.pink,
-    Colors.teal,
+  final List<_ColorOption> colors = const [
+    _ColorOption("#F59E0B", Color(0xFFF59E0B)),
+    _ColorOption("#2563EB", Color(0xFF2563EB)),
+    _ColorOption("#DC2626", Color(0xFFDC2626)),
+    _ColorOption("#7C3AED", Color(0xFF7C3AED)),
+    _ColorOption("#DB2777", Color(0xFFDB2777)),
+    _ColorOption("#0F766E", Color(0xFF0F766E)),
+    _ColorOption("#16A34A", Color(0xFF16A34A)),
   ];
 
-  final List<IconData> icons = [
-    Icons.shopping_cart_outlined,
-    Icons.restaurant_outlined,
-    Icons.directions_car_outlined,
-    Icons.home_outlined,
-    Icons.flight_outlined,
-    Icons.checkroom_outlined,
-    Icons.medical_services_outlined,
-    Icons.sports_esports_outlined,
-    Icons.fitness_center_outlined,
-    Icons.pets_outlined,
-    Icons.school_outlined,
-    Icons.shopping_bag_outlined,
-    Icons.savings_outlined,
-    Icons.attach_money_outlined,
-    Icons.wallet_outlined,
+  final List<_IconOption> icons = const [
+    _IconOption("ic_shopping_cart", Icons.shopping_cart_outlined),
+    _IconOption("ic_restaurant", Icons.restaurant_outlined),
+    _IconOption("ic_directions_car", Icons.directions_car_outlined),
+    _IconOption("ic_home", Icons.home_outlined),
+    _IconOption("ic_flight", Icons.flight_outlined),
+    _IconOption("ic_movie", Icons.movie_outlined),
+    _IconOption("ic_medical", Icons.medical_services_outlined),
+    _IconOption("ic_school", Icons.school_outlined),
+    _IconOption("ic_savings", Icons.savings_outlined),
+    _IconOption("ic_work", Icons.work_outline),
+    _IconOption("ic_payments", Icons.payments_outlined),
+    _IconOption("ic_swap_horiz", Icons.swap_horiz),
   ];
 
   @override
+  void dispose() {
+    categoryController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final selectedColor = colors[selectedColorIndex].color;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF9F6),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        title: const Text("Add New Category"),
+        actions: [
+          TextButton(
+            onPressed: isSubmitting ? null : _submit,
+            child: Text(isSubmitting ? "Saving..." : "Save"),
+          ),
+        ],
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-
-              // Header
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        "Add New Category",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+          child: Form(
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      color: selectedColor.withOpacity(0.14),
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Icon(
+                      icons[selectedIconIndex].icon,
+                      color: selectedColor,
+                      size: 42,
                     ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // Category Name
-              const Text(
-                "Category Name",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: categoryController,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: const Color(0xFFF5F5F5),
-                  hintText: "Enter category name",
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Theme Color
-              const Text(
-                "Theme Color",
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-
-              const SizedBox(height: 14),
-
-              Row(
-                children: [
-                  ...List.generate(colors.length, (index) {
+                const SizedBox(height: 24),
+                const Text(
+                  "Category Name",
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: categoryController,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Theme.of(context).cardColor,
+                    hintText: "Groceries, Transport, Salary",
+                    prefixIcon: const Icon(Icons.label_outline),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  validator: (value) {
+                    if ((value ?? "").trim().isEmpty) {
+                      return "Category name is required";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  "Theme Color",
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: List.generate(colors.length, (index) {
                     final isSelected = selectedColorIndex == index;
-
-                    return GestureDetector(
+                    return HoverTapScale(
                       onTap: () {
                         setState(() {
                           selectedColorIndex = index;
                         });
                       },
+                      borderRadius: BorderRadius.circular(999),
                       child: Container(
-                        margin: const EdgeInsets.only(right: 12),
-                        width: 36,
-                        height: 36,
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
-                          color: colors[index],
+                          color: colors[index].color,
                           shape: BoxShape.circle,
-                          border: isSelected
-                              ? Border.all(color: Colors.amber, width: 3)
-                              : null,
+                          border: Border.all(
+                            color: isSelected ? Colors.black : Colors.white,
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colors[index].color.withOpacity(0.20),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: isSelected
                             ? const Icon(
                                 Icons.check,
                                 color: Colors.white,
-                                size: 20,
+                                size: 18,
                               )
                             : null,
                       ),
                     );
                   }),
-
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF1F5F9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.add, color: Colors.grey),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 28),
-
-              // Icon Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Icon",
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "See All",
-                      style: TextStyle(
-                        color: Colors.amber,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              // Icons Grid
-              Expanded(
-                child: GridView.builder(
+                ),
+                const SizedBox(height: 26),
+                const Text(
+                  "Icon",
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   itemCount: icons.length,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5,
+                    crossAxisCount: 4,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
-                    childAspectRatio: 1,
                   ),
                   itemBuilder: (context, index) {
                     final isSelected = selectedIconIndex == index;
-
-                    return GestureDetector(
+                    return HoverTapScale(
                       onTap: () {
                         setState(() {
                           selectedIconIndex = index;
                         });
                       },
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(14),
-                          border: isSelected
-                              ? Border.all(color: Colors.amber, width: 2)
-                              : null,
+                          color: isSelected
+                              ? selectedColor.withOpacity(0.14)
+                              : Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? selectedColor
+                                : Colors.grey.shade300,
+                          ),
                         ),
                         child: Icon(
-                          icons[index],
+                          icons[index].icon,
                           color: isSelected
-                              ? Colors.amber
-                              : const Color(0xFF64748B),
+                              ? selectedColor
+                              : Colors.grey.shade700,
                         ),
                       ),
                     );
                   },
                 ),
-              ),
-            ],
+                if (errorMessage != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade100),
+                    ),
+                    child: Text(
+                      errorMessage!,
+                      style: TextStyle(color: Colors.red.shade700),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    onPressed: isSubmitting ? null : _submit,
+                    icon: isSubmitting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.check),
+                    label: Text(isSubmitting ? "Saving..." : "Create Category"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Future<void> _submit() async {
+    if (!(formKey.currentState?.validate() ?? false)) return;
+
+    setState(() {
+      isSubmitting = true;
+      errorMessage = null;
+    });
+
+    try {
+      final category = await AuthService.createCategory(
+        name: categoryController.text.trim(),
+        iconUrl: icons[selectedIconIndex].name,
+        colorHex: colors[selectedColorIndex].hex,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context, category);
+    } on ApiException catch (err) {
+      if (!mounted) return;
+      setState(() => errorMessage = err.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => errorMessage = "Failed to create category");
+    } finally {
+      if (mounted) {
+        setState(() => isSubmitting = false);
+      }
+    }
+  }
+}
+
+class _ColorOption {
+  final String hex;
+  final Color color;
+
+  const _ColorOption(this.hex, this.color);
+}
+
+class _IconOption {
+  final String name;
+  final IconData icon;
+
+  const _IconOption(this.name, this.icon);
 }

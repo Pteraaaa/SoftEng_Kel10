@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   final UsersModel user;
 
-  const PersonalInformationScreen({
-    required this.user,
-    super.key,
-  });
+  const PersonalInformationScreen({required this.user, super.key});
 
   @override
   State<PersonalInformationScreen> createState() =>
@@ -45,66 +43,67 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         return false;
       },
       child: Scaffold(
-      backgroundColor: const Color(0xFFFAF9F6),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context, currentUser),
-                    icon: const Icon(Icons.arrow_back),
-                  ),
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        "Personal Information",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context, currentUser),
+                      icon: const Icon(Icons.arrow_back),
+                    ),
+                    const Expanded(
+                      child: Center(
+                        child: Text(
+                          "Personal Information",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 48),
+                    const SizedBox(width: 48),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (pageError != null) ...[
+                  Text(pageError!, style: const TextStyle(color: Colors.red)),
+                  const SizedBox(height: 12),
                 ],
-              ),
-              const SizedBox(height: 24),
-              if (pageError != null) ...[
-                Text(pageError!, style: const TextStyle(color: Colors.red)),
-                const SizedBox(height: 12),
+                InfoPanel(
+                  children: [
+                    buildNameTile(),
+                    EditableInfoTile(
+                      icon: Icons.wc_outlined,
+                      label: "Gender",
+                      value:
+                          currentUser.gender == null ||
+                              currentUser.gender!.isEmpty
+                          ? "-"
+                          : currentUser.gender!,
+                      isUpdating: isUpdating,
+                      onTap: openChangeGenderDialog,
+                    ),
+                    EditableInfoTile(
+                      icon: Icons.cake_outlined,
+                      label: "DOB",
+                      value: currentUser.dob == null
+                          ? "-"
+                          : formatDate(currentUser.dob!),
+                      isUpdating: isUpdating,
+                      onTap: openChangeDobDialog,
+                    ),
+                  ],
+                ),
               ],
-              InfoPanel(
-                children: [
-                  buildNameTile(),
-                  EditableInfoTile(
-                    icon: Icons.wc_outlined,
-                    label: "Gender",
-                    value: currentUser.gender == null ||
-                            currentUser.gender!.isEmpty
-                        ? "-"
-                        : currentUser.gender!,
-                    isUpdating: isUpdating,
-                    onTap: openChangeGenderDialog,
-                  ),
-                  EditableInfoTile(
-                    icon: Icons.cake_outlined,
-                    label: "DOB",
-                    value: currentUser.dob == null
-                        ? "-"
-                        : formatDate(currentUser.dob!),
-                    isUpdating: isUpdating,
-                    onTap: openChangeDobDialog,
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -235,8 +234,8 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
   }
 
   Future<void> openChangeGenderDialog() async {
-    String selectedGender = currentUser.gender == null ||
-            currentUser.gender!.isEmpty
+    String selectedGender =
+        currentUser.gender == null || currentUser.gender!.isEmpty
         ? "Male"
         : currentUser.gender!;
     final genderOptions = ["Male", "Female", "Others"];
@@ -286,32 +285,34 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
                   child: const Text("Cancel"),
                 ),
                 TextButton(
-                  onPressed: isSaving ? null : () async {
-                    setDialogState(() {
-                      isSaving = true;
-                      error = null;
-                    });
+                  onPressed: isSaving
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isSaving = true;
+                            error = null;
+                          });
 
-                    final updatedGender = await changeGender(
-                      selectedGender,
-                      onError: (message) {
-                        setDialogState(() {
-                          error = message;
-                        });
-                      },
-                    );
+                          final updatedGender = await changeGender(
+                            selectedGender,
+                            onError: (message) {
+                              setDialogState(() {
+                                error = message;
+                              });
+                            },
+                          );
 
-                    if (updatedGender != null && dialogContext.mounted) {
-                      Navigator.pop(dialogContext, updatedGender);
-                      return;
-                    }
+                          if (updatedGender != null && dialogContext.mounted) {
+                            Navigator.pop(dialogContext, updatedGender);
+                            return;
+                          }
 
-                    if (dialogContext.mounted) {
-                      setDialogState(() {
-                        isSaving = false;
-                      });
-                    }
-                  },
+                          if (dialogContext.mounted) {
+                            setDialogState(() {
+                              isSaving = false;
+                            });
+                          }
+                        },
                   child: Text(isSaving ? "Saving..." : "Save"),
                 ),
               ],
@@ -453,7 +454,7 @@ class InfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -490,25 +491,29 @@ class EditableInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.amber.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
+    return HoverTapScale(
+      onTap: isUpdating ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.amber),
         ),
-        child: Icon(icon, color: Colors.amber),
-      ),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(value, style: TextStyle(color: Colors.grey.shade600)),
-      ),
-      trailing: TextButton(
-        onPressed: isUpdating ? null : onTap,
-        child: const Text("Change"),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(value, style: TextStyle(color: Colors.grey.shade600)),
+        ),
+        trailing: TextButton(
+          onPressed: isUpdating ? null : onTap,
+          child: const Text("Change"),
+        ),
       ),
     );
   }

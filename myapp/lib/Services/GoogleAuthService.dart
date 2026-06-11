@@ -23,6 +23,16 @@ class GoogleAuthService {
     }
   }
 
+  static Future<void> clearSelectedAccount() async {
+    try {
+      await _googleSignIn.disconnect();
+    } catch (_) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+    }
+  }
+
   static Future<void> redirectToBackend() async {
     final uri = Uri.parse("${AuthService.baseUrl}/Auth/google/");
     final launched = await launchUrl(
@@ -41,6 +51,7 @@ class GoogleAuthService {
       return getCurrentGoogleIdToken();
     }
 
+    await clearSelectedAccount();
     final account = await _googleSignIn.signIn();
     if (account == null) {
       throw Exception("Google login cancelled");
