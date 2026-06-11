@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:myapp/Models/ReminderModel.dart';
+import 'package:myapp/Models/NotificationHistoryModel.dart';
 import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
@@ -105,7 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 14),
                   WalletSection(wallets: wallets, onAddWallet: _addWallet),
                   const SizedBox(height: 8),
-                  TransactionSection(transactions: transactions),
+                  TransactionSection(
+                    transactions: transactions,
+                    onTransactionChanged: _loadHomeData,
+                  ),
                 ],
               ],
             ),
@@ -221,110 +224,145 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openReminders() async {
-    showModalBottomSheet(
+    showGeneralDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return FutureBuilder<List<ReminderModel>>(
-          future: AuthService.getReminders(),
-          builder: (context, snapshot) {
-            final reminders = snapshot.data ?? [];
+      barrierDismissible: true,
+      barrierLabel: "Notification history",
+      barrierColor: Colors.black.withOpacity(0.18),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SafeArea(
+            child: Material(
+              color: Colors.transparent,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: _NotificationHistoryPopup(),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(
+            position:
+                Tween<Offset>(
+                  begin: const Offset(0, -0.08),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
 
-            return Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.72,
+class _NotificationHistoryPopup extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<NotificationHistoryModel>>(
+      future: AuthService.getNotificationHistory(),
+      builder: (context, snapshot) {
+        final histories = snapshot.data ?? [];
+
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.68,
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.14),
+                blurRadius: 28,
+                offset: const Offset(0, 12),
               ),
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFC107).withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.history_rounded),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Notification History",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          "Last 7 days reminder activity",
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFC107).withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(Icons.notifications_active_outlined),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Recent Reminders",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              "Upcoming wallet and transaction alerts",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded),
                   ),
-                  const SizedBox(height: 16),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  else if (snapshot.hasError)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        "Failed to load reminders",
-                        style: TextStyle(color: Colors.red.shade700),
-                      ),
-                    )
-                  else if (reminders.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 28),
-                      child: Center(child: Text("No reminders yet")),
-                    )
-                  else
-                    Flexible(
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        itemCount: reminders.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) {
-                          return _ReminderTile(reminder: reminders[index]);
-                        },
-                      ),
-                    ),
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 16),
+              if (snapshot.connectionState == ConnectionState.waiting)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (snapshot.hasError)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(
+                    "Failed to load reminders",
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                )
+              else if (histories.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(child: Text("No notification history yet")),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: histories.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      return _HistoryTile(history: histories[index]);
+                    },
+                  ),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -361,25 +399,21 @@ class _HomeError extends StatelessWidget {
   }
 }
 
-class _ReminderTile extends StatelessWidget {
-  final ReminderModel reminder;
+class _HistoryTile extends StatelessWidget {
+  final NotificationHistoryModel history;
 
-  const _ReminderTile({required this.reminder});
+  const _HistoryTile({required this.history});
 
   @override
   Widget build(BuildContext context) {
-    final time = _formatTime(reminder.timeScheduled);
+    final time = _formatTime(history.timeScheduled);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: reminder.isActive ? const Color(0xFFFFF8E1) : Colors.grey[100],
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: reminder.isActive
-              ? const Color(0xFFFFC107).withOpacity(0.45)
-              : Colors.grey.shade300,
-        ),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         children: [
@@ -387,10 +421,10 @@ class _ReminderTile extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: reminder.isActive ? const Color(0xFFFFC107) : Colors.grey,
+              color: const Color(0xFFFFC107),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.alarm, color: Colors.white),
+            child: const Icon(Icons.notifications_active, color: Colors.black),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -398,13 +432,13 @@ class _ReminderTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  reminder.title,
+                  history.title,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  reminder.note.isEmpty ? reminder.daysActive : reminder.note,
+                  history.note.isEmpty ? history.daysActive : history.note,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
@@ -418,11 +452,11 @@ class _ReminderTile extends StatelessWidget {
               Text(time, style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 3),
               Text(
-                reminder.isActive ? "Active" : "Off",
-                style: TextStyle(
-                  color: reminder.isActive
-                      ? Colors.green.shade700
-                      : Colors.grey.shade600,
+                history.day.isEmpty
+                    ? DateFormat.MMMd().format(history.createdAt)
+                    : history.day,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),

@@ -13,6 +13,8 @@ class WalletModel {
     this.colorHex = "#1E3A5F",
   });
 
+  String get name => title;
+
   factory WalletModel.fromApi(Map<String, dynamic> data) {
     return WalletModel(
       id: data["id"]?.toString() ?? data["walletId"]?.toString() ?? "",

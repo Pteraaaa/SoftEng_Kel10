@@ -59,10 +59,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
     googleAccountSubscription = GoogleAuthService.onCurrentUserChanged.listen((
       account,
     ) async {
-      if (!kIsWeb ||
-          account == null ||
-          googleBound ||
-          isGoogleActionLoading) {
+      if (!kIsWeb || account == null || googleBound || isGoogleActionLoading) {
         return;
       }
 

@@ -56,12 +56,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         backgroundColor: const Color(0xFFFAFAFA),
         elevation: 0,
         title: const Text("Add Transaction"),
-        actions: [
-          TextButton(
-            onPressed: isSubmitting ? null : _submit,
-            child: Text(isSubmitting ? "Saving..." : "Save"),
-          ),
-        ],
       ),
       body: SafeArea(
         child: isLoading

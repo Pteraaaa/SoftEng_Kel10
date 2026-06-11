@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:myapp/Services/AuthService.dart';
 
-///
-/// MODEL
-///
 class CategoryAnalytics {
   final String categoryName;
   final double percentage;
   final double amount;
-  final int transactionCount;
   final Color color;
   final IconData icon;
 
@@ -15,64 +13,101 @@ class CategoryAnalytics {
     required this.categoryName,
     required this.percentage,
     required this.amount,
-    required this.transactionCount,
     required this.color,
     required this.icon,
   });
-}
 
-///
-/// REPOSITORY
-/// Backend Ready
-/// Replace with Firebase / API later
-///
-class AnalyticsRepository {
-  Future<List<CategoryAnalytics>> fetchAnalytics() async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  factory CategoryAnalytics.fromApi(Map<String, dynamic> data, int index) {
+    final color = _parseColor(
+      data["category_color_hex"]?.toString() ?? "",
+      fallback: _fallbackColors[index % _fallbackColors.length],
+    );
 
-    return [
-      CategoryAnalytics(
-        categoryName: "Shopping",
-        percentage: 35,
-        amount: 900000,
-        transactionCount: 12,
-        color: Colors.orange,
-        icon: Icons.shopping_bag_outlined,
-      ),
+    return CategoryAnalytics(
+      categoryName: data["category_name"]?.toString() ?? "Uncategorized",
+      percentage: _toDouble(data["percentage"]),
+      amount: _toDouble(data["total_amount"]),
+      color: color,
+      icon: _iconFor(data["category_icon_url"]?.toString() ?? ""),
+    );
+  }
 
-      CategoryAnalytics(
-        categoryName: "Transport",
-        percentage: 25,
-        amount: 500000,
-        transactionCount: 8,
-        color: Colors.blue,
-        icon: Icons.directions_bus_outlined,
-      ),
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? "") ?? 0;
+  }
 
-      CategoryAnalytics(
-        categoryName: "Food",
-        percentage: 20,
-        amount: 350000,
-        transactionCount: 10,
-        color: Colors.green,
-        icon: Icons.fastfood_outlined,
-      ),
+  static Color _parseColor(String value, {required Color fallback}) {
+    final hex = value.replaceFirst("#", "");
+    final parsed = int.tryParse(hex.length == 6 ? "FF$hex" : hex, radix: 16);
+    return parsed == null ? fallback : Color(parsed);
+  }
 
-      CategoryAnalytics(
-        categoryName: "Entertainment",
-        percentage: 20,
-        amount: 400000,
-        transactionCount: 5,
-        color: Colors.red,
-        icon: Icons.movie_outlined,
-      ),
-    ];
+  static IconData _iconFor(String iconName) {
+    switch (iconName) {
+      case "ic_restaurant":
+      case "restaurant":
+        return Icons.restaurant;
+      case "ic_shopping_cart":
+      case "shopping_cart":
+        return Icons.shopping_bag_outlined;
+      case "ic_work":
+      case "work":
+        return Icons.work_outline;
+      case "ic_movie":
+      case "movie":
+        return Icons.movie_outlined;
+      case "ic_directions_car":
+      case "transport":
+        return Icons.directions_car_outlined;
+      case "ic_home":
+        return Icons.home_outlined;
+      default:
+        return Icons.payments_outlined;
+    }
   }
 }
 
-///
-/// ANALYTICS SCREEN
-///
+class AnalyticsData {
+  final String period;
+  final double totalExpense;
+  final List<CategoryAnalytics> categories;
+
+  const AnalyticsData({
+    required this.period,
+    required this.totalExpense,
+    required this.categories,
+  });
+
+  factory AnalyticsData.fromApi(Map<String, dynamic> data) {
+    final rows = data["data"];
+    final categories = rows is List
+        ? rows
+              .whereType<Map<String, dynamic>>()
+              .toList()
+              .asMap()
+              .entries
+              .map((entry) => CategoryAnalytics.fromApi(entry.value, entry.key))
+              .toList()
+        : <CategoryAnalytics>[];
+
+    return AnalyticsData(
+      period: data["period"]?.toString() ?? "all",
+      totalExpense: CategoryAnalytics._toDouble(data["grand_total_expense"]),
+      categories: categories,
+    );
+  }
+}
+
+const _fallbackColors = [
+  Color(0xFFEF4444),
+  Color(0xFF2563EB),
+  Color(0xFF10B981),
+  Color(0xFFF59E0B),
+  Color(0xFF8B5CF6),
+  Color(0xFF0F766E),
+];
+
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({super.key});
 
@@ -81,168 +116,115 @@ class AnalyticsScreen extends StatefulWidget {
 }
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
-  final AnalyticsRepository repository = AnalyticsRepository();
-
-  late Future<List<CategoryAnalytics>> analyticsFuture;
-
+  late Future<AnalyticsData> analyticsFuture;
   int selectedFilter = 1;
+
+  final filters = const [
+    ("Week", "week"),
+    ("Month", "month"),
+    ("Year", "year"),
+  ];
 
   @override
   void initState() {
     super.initState();
+    analyticsFuture = _fetchAnalytics();
+  }
 
-    analyticsFuture = repository.fetchAnalytics();
+  Future<AnalyticsData> _fetchAnalytics() async {
+    final data = await AuthService.getCategoryBreakdown(
+      period: filters[selectedFilter].$2,
+    );
+    return AnalyticsData.fromApi(data);
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: FutureBuilder<List<CategoryAnalytics>>(
+      child: FutureBuilder<AnalyticsData>(
         future: analyticsFuture,
         builder: (context, snapshot) {
-          ///
-          /// LOADING
-          ///
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          ///
-          /// ERROR
-          ///
           if (snapshot.hasError) {
-            return const Center(child: Text("Something went wrong"));
+            return _ErrorState(onRetry: _reload);
           }
 
-          ///
-          /// DATA
-          ///
-          final analytics = snapshot.data ?? [];
+          final analytics =
+              snapshot.data ??
+              const AnalyticsData(
+                period: "month",
+                totalExpense: 0,
+                categories: [],
+              );
 
-          final totalSpent = analytics.fold<double>(
-            0,
-            (sum, item) => sum + item.amount,
-          );
+          final topCategory = analytics.categories.isEmpty
+              ? null
+              : analytics.categories.reduce(
+                  (a, b) => a.amount > b.amount ? a : b,
+                );
 
-          final topSpend = analytics.reduce(
-            (a, b) => a.percentage > b.percentage ? a : b,
-          );
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ///
-                /// HEADER
-                ///
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Analytics",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Expense composition by category",
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 18),
+                  _FilterSegment(
+                    filters: filters,
+                    selectedIndex: selectedFilter,
+                    onChanged: (index) {
+                      setState(() {
+                        selectedFilter = index;
+                        analyticsFuture = _fetchAnalytics();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 22),
+                  _SummaryPanel(
+                    totalExpense: analytics.totalExpense,
+                    period: filters[selectedFilter].$1,
+                    topCategory: topCategory,
+                    categoryCount: analytics.categories.length,
+                  ),
+                  const SizedBox(height: 22),
+                  if (analytics.categories.isEmpty)
+                    const _EmptyAnalytics()
+                  else ...[
+                    Center(
+                      child: AnalyticsDonutChart(
+                        analytics: analytics.categories,
+                        topCategory: topCategory!,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
                     const Text(
-                      "Analytics",
+                      "CATEGORY BREAKDOWN",
                       style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF64748B),
                       ),
                     ),
-
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.calendar_today_outlined),
-                    ),
+                    const SizedBox(height: 12),
+                    ...analytics.categories.map(CategoryCard.new),
                   ],
-                ),
-
-                const SizedBox(height: 20),
-
-                ///
-                /// FILTER BUTTONS
-                ///
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEDEDED),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      buildFilterButton("Week", 0),
-
-                      buildFilterButton("Month", 1),
-
-                      buildFilterButton("Year", 2),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                ///
-                /// TOTAL SPENT
-                ///
-                Center(
-                  child: Column(
-                    children: [
-                      Text(
-                        formatCurrency(totalSpent),
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Text(
-                        "Total spent this month",
-                        style: TextStyle(color: Colors.grey.shade600),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                ///
-                /// DONUT CHART
-                ///
-                Center(
-                  child: AnalyticsDonutChart(
-                    analytics: analytics,
-                    topCategory: topSpend,
-                  ),
-                ),
-
-                const SizedBox(height: 28),
-
-                ///
-                /// CATEGORY TITLE
-                ///
-                Text(
-                  "TRANSACTION PER CATEGORY",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey.shade500,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                ///
-                /// CATEGORY LIST
-                ///
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: analytics.length,
-                  itemBuilder: (context, index) {
-                    return CategoryCard(analytics: analytics[index]);
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -250,53 +232,178 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  ///
-  /// FILTER BUTTON
-  ///
-  Widget buildFilterButton(String title, int index) {
-    final isSelected = selectedFilter == index;
+  Future<void> _reload() async {
+    setState(() {
+      analyticsFuture = _fetchAnalytics();
+    });
+    await analyticsFuture;
+  }
+}
 
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedFilter = index;
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.black : Colors.grey,
+class _FilterSegment extends StatelessWidget {
+  final List<(String, String)> filters;
+  final int selectedIndex;
+  final ValueChanged<int> onChanged;
+
+  const _FilterSegment({
+    required this.filters,
+    required this.selectedIndex,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF2F7),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: filters.asMap().entries.map((entry) {
+          final isSelected = selectedIndex == entry.key;
+          return Expanded(
+            child: InkWell(
+              onTap: () => onChanged(entry.key),
+              borderRadius: BorderRadius.circular(12),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  entry.value.$1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? const Color(0xFF0F172A)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
               ),
             ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _SummaryPanel extends StatelessWidget {
+  final double totalExpense;
+  final String period;
+  final CategoryAnalytics? topCategory;
+  final int categoryCount;
+
+  const _SummaryPanel({
+    required this.totalExpense,
+    required this.period,
+    required this.topCategory,
+    required this.categoryCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = NumberFormat.currency(
+      locale: "id_ID",
+      symbol: "Rp ",
+      decimalDigits: 0,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111827),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Total expense this ${period.toLowerCase()}",
+            style: const TextStyle(color: Color(0xFFCBD5E1)),
           ),
+          const SizedBox(height: 8),
+          Text(
+            currency.format(totalExpense),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              _MetricPill(
+                icon: Icons.leaderboard_outlined,
+                label: topCategory?.categoryName ?? "No category",
+              ),
+              const SizedBox(width: 10),
+              _MetricPill(
+                icon: Icons.category_outlined,
+                label: "$categoryCount categories",
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _MetricPill({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFFFC107), size: 18),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                label,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  ///
-  /// FORMAT CURRENCY
-  ///
-  String formatCurrency(double amount) {
-    return "Rp${amount.toStringAsFixed(0)}";
-  }
 }
 
-///
-/// DONUT CHART
-///
 class AnalyticsDonutChart extends StatelessWidget {
   final List<CategoryAnalytics> analytics;
-
   final CategoryAnalytics topCategory;
 
   const AnalyticsDonutChart({
@@ -308,54 +415,63 @@ class AnalyticsDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 220,
-      height: 220,
+      width: 240,
+      height: 240,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          ///
-          /// CHART
-          ///
           CustomPaint(
-            size: const Size(220, 220),
+            size: const Size(240, 240),
             painter: DonutChartPainter(analytics),
           ),
-
-          ///
-          /// CENTER TEXT
-          ///
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "TOP SPEND",
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey.shade500,
+          Container(
+            width: 148,
+            height: 148,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                topCategory.categoryName,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "TOP SPEND",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.grey.shade500,
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                "${topCategory.percentage.toInt()}%",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: topCategory.color,
+                const SizedBox(height: 5),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  child: Text(
+                    topCategory.categoryName,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 5),
+                Text(
+                  "${topCategory.percentage.toStringAsFixed(1)}%",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: topCategory.color,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -363,9 +479,6 @@ class AnalyticsDonutChart extends StatelessWidget {
   }
 }
 
-///
-/// DONUT CHART PAINTER
-///
 class DonutChartPainter extends CustomPainter {
   final List<CategoryAnalytics> analytics;
 
@@ -374,14 +487,19 @@ class DonutChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const strokeWidth = 22.0;
-
     final radius = size.width / 2;
+    var startAngle = -90.0;
 
-    double startAngle = -90;
+    final background = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
 
-    for (var item in analytics) {
+    canvas.drawCircle(Offset(radius, radius), radius - strokeWidth, background);
+
+    for (final item in analytics) {
       final sweepAngle = 360 * (item.percentage / 100);
-
       final paint = Paint()
         ..color = item.color
         ..style = PaintingStyle.stroke
@@ -393,8 +511,8 @@ class DonutChartPainter extends CustomPainter {
           center: Offset(radius, radius),
           radius: radius - strokeWidth,
         ),
-        radians(startAngle),
-        radians(sweepAngle),
+        _radians(startAngle),
+        _radians(sweepAngle),
         false,
         paint,
       );
@@ -403,120 +521,91 @@ class DonutChartPainter extends CustomPainter {
     }
   }
 
-  double radians(double degree) {
-    return degree * 3.14159265359 / 180;
-  }
+  double _radians(double degree) => degree * 3.14159265359 / 180;
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-///
-/// CATEGORY CARD
-///
 class CategoryCard extends StatelessWidget {
   final CategoryAnalytics analytics;
 
-  const CategoryCard({super.key, required this.analytics});
+  const CategoryCard(this.analytics, {super.key});
 
   @override
   Widget build(BuildContext context) {
+    final currency = NumberFormat.currency(
+      locale: "id_ID",
+      symbol: "Rp ",
+      decimalDigits: 0,
+    );
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          ///
-          /// ICON
-          ///
           Container(
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: analytics.color.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(14),
+              color: analytics.color.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(15),
             ),
             child: Icon(analytics.icon, color: analytics.color),
           ),
-
           const SizedBox(width: 14),
-
-          ///
-          /// DETAILS
-          ///
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ///
-                /// NAME + AMOUNT
-                ///
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      analytics.categoryName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-
-                    Text(
-                      formatCurrency(analytics.amount),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                ///
-                /// PROGRESS BAR
-                ///
                 Row(
                   children: [
                     Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: analytics.percentage / 100,
-                          minHeight: 7,
-                          backgroundColor: analytics.color.withOpacity(0.15),
-                          valueColor: AlwaysStoppedAnimation(analytics.color),
+                      child: Text(
+                        analytics.categoryName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
                         ),
                       ),
                     ),
-
-                    const SizedBox(width: 10),
-
                     Text(
-                      "${analytics.percentage.toInt()}%",
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      currency.format(analytics.amount),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ],
                 ),
-
-                const SizedBox(height: 8),
-
-                ///
-                /// TRANSACTION COUNT
-                ///
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    "${analytics.transactionCount}x Transactions",
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: analytics.percentage / 100,
+                    minHeight: 8,
+                    backgroundColor: analytics.color.withOpacity(0.13),
+                    valueColor: AlwaysStoppedAnimation(analytics.color),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  "${analytics.percentage.toStringAsFixed(1)}% of spending",
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -526,11 +615,66 @@ class CategoryCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  ///
-  /// FORMAT CURRENCY
-  ///
-  String formatCurrency(double amount) {
-    return "Rp${amount.toStringAsFixed(0)}";
+class _EmptyAnalytics extends StatelessWidget {
+  const _EmptyAnalytics();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.donut_large_outlined,
+            color: Colors.grey.shade400,
+            size: 42,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            "No expense data yet",
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            "Create an expense transaction to populate this breakdown.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final Future<void> Function() onRetry;
+
+  const _ErrorState({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red.shade400, size: 42),
+            const SizedBox(height: 10),
+            const Text("Failed to load analytics"),
+            const SizedBox(height: 12),
+            OutlinedButton(onPressed: onRetry, child: const Text("Try Again")),
+          ],
+        ),
+      ),
+    );
   }
 }

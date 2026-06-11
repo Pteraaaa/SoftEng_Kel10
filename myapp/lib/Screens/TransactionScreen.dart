@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
+import 'package:myapp/Screens/TransactionDetailScreen.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Widgets/TransactionCard.dart';
 
@@ -132,8 +133,11 @@ class _TransactionScreenState extends State<TransactionScreen> {
           children: [
             _sectionTitle(day),
             ...items.asMap().entries.map(
-              (entry) =>
-                  TransactionCard(transaction: entry.value, index: entry.key),
+              (entry) => TransactionCard(
+                transaction: entry.value,
+                index: entry.key,
+                onTap: () => _openDetail(entry.value.id),
+              ),
             ),
           ],
         );
@@ -198,6 +202,17 @@ class _TransactionScreenState extends State<TransactionScreen> {
       selectedDate = picked;
     });
     await _loadTransactions();
+  }
+
+  Future<void> _openDetail(String id) async {
+    if (id.isEmpty) return;
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TransactionDetailScreen(transactionId: id),
+      ),
+    );
+    if (changed == true) _loadTransactions();
   }
 
   String? _selectedTypeQuery() {

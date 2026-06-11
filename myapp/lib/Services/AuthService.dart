@@ -6,6 +6,7 @@ import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:myapp/Models/CategoryModel.dart';
+import 'package:myapp/Models/NotificationHistoryModel.dart';
 import 'package:myapp/Models/ReminderModel.dart';
 import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Models/UsersModel.dart';
@@ -431,6 +432,43 @@ class AuthService {
     );
   }
 
+  static Future<List<NotificationHistoryModel>> getNotificationHistory() async {
+    final data = _decode(await _authorizedGet("/reminders/history"));
+    final responseData = data["data"];
+
+    if (responseData is List) {
+      return responseData
+          .whereType<Map<String, dynamic>>()
+          .map(NotificationHistoryModel.fromApi)
+          .toList();
+    }
+
+    throw ApiException(
+      _errorMessage(data, fallback: "Failed to load notification history"),
+    );
+  }
+
+  static Future<void> createNotificationHistory({
+    required String reminderId,
+    required String title,
+    String? note,
+  }) async {
+    final data = _decode(
+      await _authorizedPost("/reminders/history/create", {
+        "reminder_id": reminderId,
+        "title": title,
+        "note": note,
+      }),
+    );
+
+    final message = data["message"]?.toString() ?? "";
+    if (_messageMatches(message, "History notifikasi berhasil dicatat")) {
+      return;
+    }
+
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
   static Future<void> createReminder({
     required String title,
     required String timeScheduled,
@@ -452,6 +490,148 @@ class AuthService {
     }
 
     throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> editReminder({
+    required String id,
+    required String title,
+    required String timeScheduled,
+    required String daysActive,
+    String? note,
+  }) async {
+    final data = _decode(
+      await _authorizedPut("/reminders/edit/$id", {
+        "title": title,
+        "note": note,
+        "time_scheduled": timeScheduled,
+        "days_active": daysActive,
+      }),
+    );
+
+    final message = data["message"]?.toString() ?? "";
+    if (_messageMatches(message, "Reminder berhasil diperbarui")) {
+      return;
+    }
+
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> deleteReminder(String id) async {
+    final data = _decode(await _authorizedDelete("/reminders/delete/$id"));
+    final message = data["message"]?.toString() ?? "";
+    if (_messageMatches(message, "Reminder berhasil dihapus")) {
+      return;
+    }
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> toggleReminder(String id) async {
+    final data = _decode(await _authorizedPatch("/reminders/toggle/$id", {}));
+    final message = data["message"]?.toString() ?? "";
+    if (message.isNotEmpty) {
+      return;
+    }
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> deleteTransaction(String id) async {
+    final data = _decode(await _authorizedDelete("/transactions/delete/$id"));
+    final message = data["message"]?.toString() ?? "";
+    if (message.isNotEmpty) {
+      return;
+    }
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> editIncomeExpenseTransaction({
+    required String id,
+    required String type,
+    required num amount,
+    required String categoryId,
+    required String walletId,
+    required String transactionDate,
+    required String title,
+    String? note,
+  }) async {
+    final data = _decode(
+      await _authorizedPut("/transactions/edit/$id", {
+        "type": type,
+        "amount": amount,
+        "category_id": categoryId,
+        "wallet_id": walletId,
+        "transaction_date": transactionDate,
+        "title": title,
+        "note": note,
+        "receipt_image_url": null,
+      }),
+    );
+
+    final message = data["message"]?.toString() ?? "";
+    if (_messageMatches(message, "Transaksi berhasil diperbarui")) {
+      return;
+    }
+
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<void> editTransferTransaction({
+    required String id,
+    required num amount,
+    required String fromWalletId,
+    required String toWalletId,
+    required String transactionDate,
+    required String title,
+    String? note,
+  }) async {
+    final data = _decode(
+      await _authorizedPut("/transactions/edit-transfer/$id", {
+        "amount": amount,
+        "from_wallet_id": fromWalletId,
+        "to_wallet_id": toWalletId,
+        "transaction_date": transactionDate,
+        "title": title,
+        "note": note,
+        "receipt_image_url": null,
+      }),
+    );
+
+    final message = data["message"]?.toString() ?? "";
+    if (_messageMatches(message, "Transfer berhasil diperbarui")) {
+      return;
+    }
+
+    throw ApiException(_errorMessage(data, fallback: message));
+  }
+
+  static Future<Map<String, dynamic>> getCategoryBreakdown({
+    String? period,
+  }) async {
+    final path = period == null
+        ? "/transactions/category-breakdown"
+        : "/transactions/category-breakdown?period=$period";
+    final data = _decode(await _authorizedGet(path));
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> getUserSettings() async {
+    final data = _decode(await _authorizedGet("/users/settings"));
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> changeSettings({
+    String? currency,
+    String? appearance,
+    String? language,
+  }) async {
+    final body = <String, dynamic>{};
+    if (currency != null) body["currency"] = currency;
+    if (appearance != null) body["appearance"] = appearance;
+    if (language != null) body["language"] = language;
+
+    final data = _decode(
+      await _authorizedPatch("/users/change-settings", body),
+    );
+    return data;
   }
 
   static Future<String> changeAvatarUrl(XFile avatar) async {
@@ -792,6 +972,31 @@ class AuthService {
           "Content-Type": "application/json",
         },
         body: jsonEncode(body),
+      );
+    });
+  }
+
+  static Future<http.Response> _authorizedPut(
+    String path,
+    Map<String, dynamic> body,
+  ) {
+    return _sendAuthorized((accessToken) {
+      return http.put(
+        Uri.parse("$baseUrl$path"),
+        headers: {
+          "Authorization": "Bearer $accessToken",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode(body),
+      );
+    });
+  }
+
+  static Future<http.Response> _authorizedDelete(String path) {
+    return _sendAuthorized((accessToken) {
+      return http.delete(
+        Uri.parse("$baseUrl$path"),
+        headers: {"Authorization": "Bearer $accessToken"},
       );
     });
   }

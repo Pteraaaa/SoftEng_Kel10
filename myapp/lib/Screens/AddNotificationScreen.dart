@@ -48,12 +48,6 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         backgroundColor: const Color(0xFFFAFAFA),
         elevation: 0,
         title: const Text("Add Reminder"),
-        actions: [
-          TextButton(
-            onPressed: isSubmitting ? null : _submit,
-            child: Text(isSubmitting ? "Saving..." : "Save"),
-          ),
-        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

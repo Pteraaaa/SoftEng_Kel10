@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
+import 'package:myapp/Services/ReminderSchedulerService.dart';
 import 'package:myapp/Widgets/NavBar.dart';
 import 'HomeScreen.dart';
 import 'AnalyticsScreen.dart';
@@ -16,7 +17,8 @@ class TemplateScreen extends StatefulWidget {
   State<TemplateScreen> createState() => _TemplateScreenState();
 }
 
-class _TemplateScreenState extends State<TemplateScreen> {
+class _TemplateScreenState extends State<TemplateScreen>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   late UsersModel _user;
 
@@ -24,6 +26,22 @@ class _TemplateScreenState extends State<TemplateScreen> {
   void initState() {
     super.initState();
     _user = widget.user;
+    WidgetsBinding.instance.addObserver(this);
+    ReminderSchedulerService.instance.resyncSafely();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    ReminderSchedulerService.instance.stop();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ReminderSchedulerService.instance.resyncSafely();
+    }
   }
 
   Widget _getScreen() {
@@ -33,7 +51,7 @@ class _TemplateScreenState extends State<TemplateScreen> {
       case 1:
         return const TransactionScreen();
       case 2:
-        return AnalyticsScreen();
+        return const AnalyticsScreen();
       case 3:
         return ProfileScreen(
           user: _user,
@@ -117,8 +135,8 @@ class _TemplateScreenState extends State<TemplateScreen> {
               const SizedBox(height: 12),
               _CreateMenuItem(
                 icon: Icons.notifications_active_outlined,
-                title: "Notification",
-                subtitle: "Create a wallet reminder",
+                title: "Reminder",
+                subtitle: "Schedule a recurring wallet reminder",
                 color: const Color(0xFF2563EB),
                 onTap: () => Navigator.pop(context, _CreateAction.notification),
               ),
@@ -141,10 +159,13 @@ class _TemplateScreenState extends State<TemplateScreen> {
       return;
     }
 
-    await Navigator.push(
+    final created = await Navigator.push<bool>(
       context,
       MaterialPageRoute(builder: (_) => const AddNotificationScreen()),
     );
+    if (created == true) {
+      await ReminderSchedulerService.instance.resyncSafely();
+    }
   }
 }
 
