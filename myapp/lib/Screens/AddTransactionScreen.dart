@@ -4,7 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:myapp/Models/CategoryModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/CreateCategoryScreen.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 import 'package:myapp/Widgets/CategoryChip.dart';
 import 'package:myapp/Widgets/HoverTapScale.dart';
 
@@ -502,29 +504,31 @@ class _WalletDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat.currency(
-      locale: "id_ID",
-      symbol: "Rp. ",
-      decimalDigits: 0,
-    );
-
-    return DropdownButtonFormField<WalletModel>(
-      value: value,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
-        filled: true,
-        fillColor: Theme.of(context).cardColor,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-      ),
-      items: wallets.map((wallet) {
-        return DropdownMenuItem(
-          value: wallet,
-          child: Text("${wallet.title} (${formatter.format(wallet.balance)})"),
+    return ValueListenableBuilder<String>(
+      valueListenable: AppCurrencyService.currency,
+      builder: (context, currency, _) {
+        return DropdownButtonFormField<WalletModel>(
+          value: value,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+            filled: true,
+            fillColor: Theme.of(context).cardColor,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+          items: wallets.map((wallet) {
+            return DropdownMenuItem(
+              value: wallet,
+              child: Text(
+                "${wallet.title} (${MoneyFormatter.format(wallet.balance, currency: currency)})",
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          validator: (wallet) =>
+              wallet == null ? "Please select a wallet" : null,
         );
-      }).toList(),
-      onChanged: onChanged,
-      validator: (wallet) => wallet == null ? "Please select a wallet" : null,
+      },
     );
   }
 }

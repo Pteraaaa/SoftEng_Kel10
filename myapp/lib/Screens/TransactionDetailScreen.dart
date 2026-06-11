@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:myapp/Models/CategoryModel.dart';
 import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Models/WalletModel.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final String transactionId;
@@ -20,12 +22,6 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   String? errorMessage;
   bool _changed = false;
   bool _isDeleting = false;
-
-  final currency = NumberFormat.currency(
-    locale: "id_ID",
-    symbol: "Rp ",
-    decimalDigits: 0,
-  );
 
   @override
   void initState() {
@@ -104,13 +100,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 ),
                 const SizedBox(height: 6),
                 if (!isTransfer) ...[
-                  Text(
-                    "${item.isExpense ? '-' : '+'}${currency.format(item.amount)}",
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: AppCurrencyService.currency,
+                    builder: (context, currency, _) {
+                      return Text(
+                        "${item.isExpense ? '-' : '+'}${MoneyFormatter.format(item.amount, currency: currency)}",
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 6),
                   Container(
@@ -132,13 +133,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     ),
                   ),
                 ] else ...[
-                  Text(
-                    currency.format(item.amount),
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  ValueListenableBuilder<String>(
+                    valueListenable: AppCurrencyService.currency,
+                    builder: (context, currency, _) {
+                      return Text(
+                        MoneyFormatter.format(item.amount, currency: currency),
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 6),
                   Container(
@@ -239,7 +245,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         _InfoRow(
                           icon: Icons.payments_outlined,
                           label: "Amount",
-                          value: currency.format(item.amount),
+                          value: MoneyFormatter.format(item.amount),
                         ),
                       ],
                     ),
@@ -975,24 +981,26 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     WalletModel? value,
     ValueChanged<WalletModel?> onChanged,
   ) {
-    final fmt = NumberFormat.currency(
-      locale: "id_ID",
-      symbol: "Rp ",
-      decimalDigits: 0,
-    );
-    return DropdownButtonFormField<WalletModel>(
-      value: value,
-      decoration: _dec(label, Icons.account_balance_wallet_outlined),
-      items: wallets
-          .map(
-            (w) => DropdownMenuItem(
-              value: w,
-              child: Text("${w.title} (${fmt.format(w.balance)})"),
-            ),
-          )
-          .toList(),
-      onChanged: onChanged,
-      validator: (v) => v == null ? "Select wallet" : null,
+    return ValueListenableBuilder<String>(
+      valueListenable: AppCurrencyService.currency,
+      builder: (context, currency, _) {
+        return DropdownButtonFormField<WalletModel>(
+          value: value,
+          decoration: _dec(label, Icons.account_balance_wallet_outlined),
+          items: wallets
+              .map(
+                (w) => DropdownMenuItem(
+                  value: w,
+                  child: Text(
+                    "${w.title} (${MoneyFormatter.format(w.balance, currency: currency)})",
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: onChanged,
+          validator: (v) => v == null ? "Select wallet" : null,
+        );
+      },
     );
   }
 

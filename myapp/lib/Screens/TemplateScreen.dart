@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AppThemeService.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/ReminderSchedulerService.dart';
@@ -42,6 +43,9 @@ class _TemplateScreenState extends State<TemplateScreen>
       if (settings is Map<String, dynamic>) {
         AppThemeService.setDarkMode(
           settings["appearance"]?.toString().toLowerCase() == "dark",
+        );
+        AppCurrencyService.setCurrency(
+          settings["currency"]?.toString() ?? "IDR",
         );
       }
     } catch (_) {

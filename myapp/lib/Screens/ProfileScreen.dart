@@ -5,6 +5,7 @@ import 'package:myapp/Screens/LoginSecurityScreen.dart';
 import 'package:myapp/Screens/AuthScreen.dart';
 import 'package:myapp/Screens/PersonalInformationScreen.dart';
 import 'package:myapp/Screens/ReminderScreen.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AppThemeService.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/TokenStorage.dart';
@@ -30,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? avatarError;
   bool isDarkMode = false;
   String selectedLanguage = "English";
+  String selectedCurrency = "IDR";
   bool isSavingSettings = false;
 
   @override
@@ -261,6 +263,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               onChanged: _changeLanguage,
                             ),
                           ),
+                          _Divider(color: mutedColor.withOpacity(0.14)),
+                          _MenuTile(
+                            icon: Icons.attach_money_rounded,
+                            iconBg: const Color(0xFFE0F2FE),
+                            iconColor: const Color(0xFF0284C7),
+                            textColor: textColor,
+                            mutedColor: mutedColor,
+                            title: _t("Currency", "Mata Uang"),
+                            subtitle: _t(
+                              "Display amounts only",
+                              "Hanya tampilan nominal",
+                            ),
+                            trailing: _CurrencyPicker(
+                              value: selectedCurrency,
+                              onChanged: _changeCurrency,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -407,9 +426,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         selectedLanguage = language.toLowerCase().startsWith("indo")
             ? "Indonesia"
             : "English";
+        selectedCurrency =
+            settings["currency"]?.toString().toUpperCase() == "USD"
+            ? "USD"
+            : "IDR";
         isDarkMode = appearance.toLowerCase() == "dark";
       });
       AppThemeService.setDarkMode(isDarkMode);
+      AppCurrencyService.setCurrency(selectedCurrency);
     } catch (_) {
       // Settings are non-blocking for the profile page.
     }
@@ -456,6 +480,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() => selectedLanguage = previous);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to update language")),
+      );
+    } finally {
+      if (mounted) setState(() => isSavingSettings = false);
+    }
+  }
+
+  Future<void> _changeCurrency(String currency) async {
+    final previous = selectedCurrency;
+    setState(() {
+      selectedCurrency = currency;
+      isSavingSettings = true;
+    });
+    AppCurrencyService.setCurrency(currency);
+
+    try {
+      await AuthService.changeSettings(currency: currency);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => selectedCurrency = previous);
+      AppCurrencyService.setCurrency(previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to update currency")),
       );
     } finally {
       if (mounted) setState(() => isSavingSettings = false);
@@ -684,6 +730,35 @@ class _LanguagePicker extends StatelessWidget {
         DropdownMenuItem(
           value: "Indonesia",
           child: Text("Indonesia", style: TextStyle(fontSize: 13)),
+        ),
+      ],
+      onChanged: (value) {
+        if (value != null) onChanged(value);
+      },
+    );
+  }
+}
+
+class _CurrencyPicker extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const _CurrencyPicker({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<String>(
+      value: value,
+      underline: const SizedBox.shrink(),
+      isDense: true,
+      items: const [
+        DropdownMenuItem(
+          value: "IDR",
+          child: Text("IDR", style: TextStyle(fontSize: 13)),
+        ),
+        DropdownMenuItem(
+          value: "USD",
+          child: Text("USD", style: TextStyle(fontSize: 13)),
         ),
       ],
       onChanged: (value) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class TransactionCard extends StatelessWidget {
@@ -17,83 +19,89 @@ class TransactionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,##0', "id_ID");
     final color = _getColor();
     final isTransfer = transaction.type == "transfer";
-    final amountPrefix = transaction.isExpense ? "-Rp. " : "+Rp. ";
 
-    return HoverTapScale(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      hoverScale: 1.018,
-      pressScale: 0.975,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.18),
-              spreadRadius: 0.2,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    return ValueListenableBuilder<String>(
+      valueListenable: AppCurrencyService.currency,
+      builder: (context, currency, _) {
+        final amountPrefix = transaction.isExpense ? "-" : "+";
+        return HoverTapScale(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withOpacity(0.18),
-              ),
-              child: Icon(_getIcon(), color: color, size: 22),
+          hoverScale: 1.018,
+          pressScale: 0.975,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.18),
+                  spreadRadius: 0.2,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.title.isEmpty ? "Untitled" : transaction.title,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: color.withOpacity(0.18),
                   ),
-                  const SizedBox(height: 3),
+                  child: Icon(_getIcon(), color: color, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        transaction.title.isEmpty
+                            ? "Untitled"
+                            : transaction.title,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _subtitle(),
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isTransfer) ...[
+                  const SizedBox(width: 8),
                   Text(
-                    _subtitle(),
-                    overflow: TextOverflow.ellipsis,
+                    "$amountPrefix${MoneyFormatter.format(transaction.amount, currency: currency)}",
                     style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w400,
+                      color: transaction.isExpense
+                          ? Colors.red.shade600
+                          : Colors.green.shade600,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
                     ),
                   ),
-                ],
-              ),
+                ] else
+                  Icon(Icons.chevron_right, color: Colors.grey.shade400),
+              ],
             ),
-            if (!isTransfer) ...[
-              const SizedBox(width: 8),
-              Text(
-                "$amountPrefix${formatter.format(transaction.amount)}",
-                style: TextStyle(
-                  color: transaction.isExpense
-                      ? Colors.red.shade600
-                      : Colors.green.shade600,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-              ),
-            ] else
-              Icon(Icons.chevron_right, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

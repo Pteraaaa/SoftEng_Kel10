@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class CategoryAnalytics {
@@ -321,12 +322,6 @@ class _SummaryPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currency = NumberFormat.currency(
-      locale: "id_ID",
-      symbol: "Rp ",
-      decimalDigits: 0,
-    );
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -342,13 +337,18 @@ class _SummaryPanel extends StatelessWidget {
             style: const TextStyle(color: Color(0xFFCBD5E1)),
           ),
           const SizedBox(height: 8),
-          Text(
-            currency.format(totalExpense),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-            ),
+          ValueListenableBuilder<String>(
+            valueListenable: AppCurrencyService.currency,
+            builder: (context, currency, _) {
+              return Text(
+                MoneyFormatter.format(totalExpense, currency: currency),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w800,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 18),
           Row(
@@ -539,12 +539,6 @@ class CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currency = NumberFormat.currency(
-      locale: "id_ID",
-      symbol: "Rp ",
-      decimalDigits: 0,
-    );
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -588,9 +582,17 @@ class CategoryCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      currency.format(analytics.amount),
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ValueListenableBuilder<String>(
+                      valueListenable: AppCurrencyService.currency,
+                      builder: (context, currency, _) {
+                        return Text(
+                          MoneyFormatter.format(
+                            analytics.amount,
+                            currency: currency,
+                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        );
+                      },
                     ),
                   ],
                 ),

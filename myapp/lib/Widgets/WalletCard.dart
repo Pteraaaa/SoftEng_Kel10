@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class WalletCard extends StatefulWidget {
@@ -30,12 +31,6 @@ class _WalletCardState extends State<WalletCard> {
   ];
 
   bool hideCard = true;
-
-  final formatter = NumberFormat.currency(
-    locale: "id_ID",
-    symbol: "Rp. ",
-    decimalDigits: 0,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -119,17 +114,22 @@ class _WalletCardState extends State<WalletCard> {
             ],
           ),
           const Spacer(),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatter.format(widget.balance),
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+          ValueListenableBuilder<String>(
+            valueListenable: AppCurrencyService.currency,
+            builder: (context, currency, _) {
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  MoneyFormatter.format(widget.balance, currency: currency),
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),

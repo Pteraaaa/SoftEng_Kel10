@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/Screens/AuthCallbackScreen.dart';
 import 'package:myapp/Screens/AuthScreen.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AppThemeService.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/TokenStorage.dart';
@@ -211,6 +212,11 @@ class _AuthGateState extends State<AuthGate> {
             settingsData is Map<String, dynamic> &&
             settingsData["appearance"]?.toString().toLowerCase() == "dark";
         AppThemeService.setDarkMode(isDark);
+        if (settingsData is Map<String, dynamic>) {
+          AppCurrencyService.setCurrency(
+            settingsData["currency"]?.toString() ?? "IDR",
+          );
+        }
       } catch (_) {
         // Settings are not part of the authentication decision.
       }

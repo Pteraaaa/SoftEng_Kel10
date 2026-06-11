@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+import 'package:myapp/Services/AppCurrencyService.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Utils/MoneyFormatter.dart';
 import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class AddWalletScreen extends StatefulWidget {
@@ -270,12 +271,6 @@ class _WalletPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseColor = _parseColor(colorHex);
-    final formatter = NumberFormat.currency(
-      locale: "id_ID",
-      symbol: "Rp. ",
-      decimalDigits: 0,
-    );
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -336,17 +331,22 @@ class _WalletPreview extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatter.format(balance),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-              ),
-            ),
+          ValueListenableBuilder<String>(
+            valueListenable: AppCurrencyService.currency,
+            builder: (context, currency, _) {
+              return FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  MoneyFormatter.format(balance, currency: currency),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
