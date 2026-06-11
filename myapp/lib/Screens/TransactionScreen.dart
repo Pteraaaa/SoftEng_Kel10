@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
 import 'package:myapp/Screens/TransactionDetailScreen.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 import 'package:myapp/Widgets/TransactionCard.dart';
 
 class TransactionScreen extends StatefulWidget {
@@ -260,7 +261,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Widget _buildFilter(String text, FilterType type) {
     final isActive = selectedFilter == type;
 
-    return GestureDetector(
+    return HoverTapScale(
       onTap: () {
         setState(() {
           selectedFilter = type;
@@ -268,11 +269,16 @@ class _TransactionScreenState extends State<TransactionScreen> {
         });
         _loadTransactions();
       },
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? Colors.amber : Colors.grey.shade200,
+          color: isActive
+              ? Colors.amber
+              : Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -309,8 +315,9 @@ class _DateFilterPill extends StatelessWidget {
           const SizedBox(width: 8),
           Text(DateFormat.yMMMd().format(date)),
           const SizedBox(width: 8),
-          GestureDetector(
+          HoverTapScale(
             onTap: onClear,
+            borderRadius: BorderRadius.circular(999),
             child: const Icon(Icons.close, size: 16),
           ),
         ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class CreateCategoryScreen extends StatefulWidget {
   const CreateCategoryScreen({super.key});
@@ -52,9 +53,9 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
     final selectedColor = colors[selectedColorIndex].color;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text("Add New Category"),
         actions: [
@@ -97,7 +98,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                   controller: categoryController,
                   decoration: InputDecoration(
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).cardColor,
                     hintText: "Groceries, Transport, Salary",
                     prefixIcon: const Icon(Icons.label_outline),
                     border: OutlineInputBorder(
@@ -122,12 +123,13 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                   runSpacing: 12,
                   children: List.generate(colors.length, (index) {
                     final isSelected = selectedColorIndex == index;
-                    return GestureDetector(
+                    return HoverTapScale(
                       onTap: () {
                         setState(() {
                           selectedColorIndex = index;
                         });
                       },
+                      borderRadius: BorderRadius.circular(999),
                       child: Container(
                         width: 38,
                         height: 38,
@@ -174,17 +176,18 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                   ),
                   itemBuilder: (context, index) {
                     final isSelected = selectedIconIndex == index;
-                    return GestureDetector(
+                    return HoverTapScale(
                       onTap: () {
                         setState(() {
                           selectedIconIndex = index;
                         });
                       },
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
                         decoration: BoxDecoration(
                           color: isSelected
                               ? selectedColor.withOpacity(0.14)
-                              : Colors.white,
+                              : Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected

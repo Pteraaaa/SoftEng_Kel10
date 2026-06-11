@@ -535,9 +535,12 @@ class AuthService {
   }
 
   static Future<void> deleteTransaction(String id) async {
-    final data = _decode(await _authorizedDelete("/transactions/delete/$id"));
+    final response = await _authorizedDelete("/transactions/delete/$id");
+    final data = _decode(response);
     final message = data["message"]?.toString() ?? "";
-    if (message.isNotEmpty) {
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300 &&
+        message.startsWith("Transaksi berhasil dihapus")) {
       return;
     }
     throw ApiException(_errorMessage(data, fallback: message));

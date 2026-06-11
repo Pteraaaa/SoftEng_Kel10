@@ -6,6 +6,7 @@ import 'package:myapp/Models/WalletModel.dart';
 import 'package:myapp/Screens/CreateCategoryScreen.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Widgets/CategoryChip.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -51,9 +52,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text("Add Transaction"),
       ),
@@ -440,28 +441,33 @@ class _TypeSegment extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E293B)
+            : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          _button("Expense", TransactionType.expense),
-          _button("Income", TransactionType.income),
-          _button("Transfer", TransactionType.transfer),
+          _button(context, "Expense", TransactionType.expense),
+          _button(context, "Income", TransactionType.income),
+          _button(context, "Transfer", TransactionType.transfer),
         ],
       ),
     );
   }
 
-  Widget _button(String text, TransactionType type) {
+  Widget _button(BuildContext context, String text, TransactionType type) {
     final isSelected = selectedType == type;
     return Expanded(
-      child: GestureDetector(
+      child: HoverTapScale(
         onTap: () => onChanged(type),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected
+                ? Theme.of(context).cardColor
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
@@ -469,7 +475,9 @@ class _TypeSegment extends StatelessWidget {
               text,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.black : Colors.grey.shade600,
+                color: isSelected
+                    ? Theme.of(context).textTheme.bodyLarge?.color
+                    : Colors.grey.shade600,
               ),
             ),
           ),
@@ -506,7 +514,7 @@ class _WalletDropdown extends StatelessWidget {
         labelText: label,
         prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
       items: wallets.map((wallet) {
@@ -552,7 +560,7 @@ class _TextInput extends StatelessWidget {
         hintText: hint,
         prefixIcon: Icon(icon),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
@@ -574,13 +582,13 @@ class _PickerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return HoverTapScale(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade300),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class WalletCard extends StatefulWidget {
   final String title;
@@ -102,12 +103,13 @@ class _WalletCardState extends State<WalletCard> {
                   ),
                 ),
               ),
-              GestureDetector(
+              HoverTapScale(
                 onTap: () {
                   setState(() {
                     hideCard = !hideCard;
                   });
                 },
+                borderRadius: BorderRadius.circular(999),
                 child: Icon(
                   hideCard ? Icons.visibility : Icons.visibility_off,
                   color: Colors.white,

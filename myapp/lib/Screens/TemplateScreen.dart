@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
+import 'package:myapp/Services/AppThemeService.dart';
+import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/ReminderSchedulerService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 import 'package:myapp/Widgets/NavBar.dart';
 import 'HomeScreen.dart';
 import 'AnalyticsScreen.dart';
@@ -11,6 +14,7 @@ import 'AddNotificationScreen.dart';
 
 class TemplateScreen extends StatefulWidget {
   final UsersModel user;
+
   const TemplateScreen({required this.user, super.key});
 
   @override
@@ -27,7 +31,22 @@ class _TemplateScreenState extends State<TemplateScreen>
     super.initState();
     _user = widget.user;
     WidgetsBinding.instance.addObserver(this);
+    _loadThemeSettings();
     ReminderSchedulerService.instance.resyncSafely();
+  }
+
+  Future<void> _loadThemeSettings() async {
+    try {
+      final data = await AuthService.getUserSettings();
+      final settings = data["data"];
+      if (settings is Map<String, dynamic>) {
+        AppThemeService.setDarkMode(
+          settings["appearance"]?.toString().toLowerCase() == "dark",
+        );
+      }
+    } catch (_) {
+      return;
+    }
   }
 
   @override
@@ -96,8 +115,8 @@ class _TemplateScreenState extends State<TemplateScreen>
       builder: (context) {
         return Container(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
@@ -188,13 +207,15 @@ class _CreateMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return HoverTapScale(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.grey.shade50,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1E293B)
+              : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.grey.shade200),
         ),

@@ -30,7 +30,7 @@ class Infocard extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         margin: const EdgeInsets.symmetric(horizontal: 6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.3),
@@ -57,7 +57,10 @@ class Infocard extends StatelessWidget {
                   child: Icon(icon, color: iconColor, size: 20),
                 ),
                 const SizedBox(width: 15),
-                Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
               ],
             ),
 

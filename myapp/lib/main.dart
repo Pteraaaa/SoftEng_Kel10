@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:myapp/Screens/AuthCallbackScreen.dart';
 import 'package:myapp/Screens/AuthScreen.dart';
 import 'package:myapp/Screens/TemplateScreen.dart';
+import 'package:myapp/Services/AppThemeService.dart';
 import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/TokenStorage.dart';
 
@@ -95,17 +96,83 @@ class _AppRootState extends State<AppRoot> {
   Widget build(BuildContext context) {
     final authCode = kIsWeb ? AuthCallbackUri.extractAuthCode(Uri.base) : null;
 
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: "Pocket Log",
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: appBackgroundColor,
-        canvasColor: appBackgroundColor,
+    return ValueListenableBuilder<bool>(
+      valueListenable: AppThemeService.isDarkMode,
+      builder: (context, isDarkMode, _) {
+        return MaterialApp(
+          navigatorKey: navigatorKey,
+          title: "Pocket Log",
+          debugShowCheckedModeBanner: false,
+          themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+          theme: _buildTheme(Brightness.light),
+          darkTheme: _buildTheme(Brightness.dark),
+          home: authCode == null
+              ? const AuthGate()
+              : AuthCallbackScreen(authCode: authCode),
+        );
+      },
+    );
+  }
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: Colors.amber,
+      brightness: brightness,
+    );
+    final background = isDark ? const Color(0xFF0F172A) : appBackgroundColor;
+
+    final buttonShape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    );
+    final hoverOverlay = WidgetStateProperty.resolveWith<Color?>((states) {
+      if (states.contains(WidgetState.hovered)) {
+        return Colors.amber.withValues(alpha: isDark ? 0.16 : 0.18);
+      }
+      if (states.contains(WidgetState.pressed)) {
+        return Colors.amber.withValues(alpha: 0.24);
+      }
+      return null;
+    });
+
+    return ThemeData(
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
+      cardColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        foregroundColor: isDark ? Colors.white : const Color(0xFF0F172A),
+        elevation: 0,
       ),
-      home: authCode == null
-          ? const AuthGate()
-          : AuthCallbackScreen(authCode: authCode),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          shape: buttonShape,
+          animationDuration: const Duration(milliseconds: 150),
+        ).copyWith(overlayColor: hoverOverlay),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: buttonShape,
+          animationDuration: const Duration(milliseconds: 150),
+        ).copyWith(overlayColor: hoverOverlay),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          animationDuration: const Duration(milliseconds: 150),
+        ).copyWith(overlayColor: hoverOverlay),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: ButtonStyle(
+          overlayColor: hoverOverlay,
+          animationDuration: const Duration(milliseconds: 150),
+        ),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: Colors.amber,
+        foregroundColor: Colors.black,
+      ),
     );
   }
 }
@@ -137,6 +204,16 @@ class _AuthGateState extends State<AuthGate> {
 
     try {
       final user = await AuthService.getMeWithRefresh();
+      try {
+        final settings = await AuthService.getUserSettings();
+        final settingsData = settings["data"];
+        final isDark =
+            settingsData is Map<String, dynamic> &&
+            settingsData["appearance"]?.toString().toLowerCase() == "dark";
+        AppThemeService.setDarkMode(isDark);
+      } catch (_) {
+        // Settings are not part of the authentication decision.
+      }
       return TemplateScreen(user: user);
     } catch (_) {
       await TokenStorage.clear();

@@ -19,6 +19,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   bool isLoading = true;
   String? errorMessage;
   bool _changed = false;
+  bool _isDeleting = false;
 
   final currency = NumberFormat.currency(
     locale: "id_ID",
@@ -36,11 +37,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop && _changed) Navigator.pop(context, true);
-      },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8F9FE),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
@@ -277,11 +275,20 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _confirmDelete,
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            color: Colors.red,
-                          ),
+                          onPressed: _isDeleting ? null : _confirmDelete,
+                          icon: _isDeleting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.red,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Colors.red,
+                                ),
                           label: const Text(
                             "Delete",
                             style: TextStyle(
@@ -391,8 +398,21 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       ),
     );
     if (confirm != true || !mounted) return;
+    final transactionId = transaction!.id.isEmpty
+        ? widget.transactionId
+        : transaction!.id;
+    if (transactionId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Transaction ID is missing"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    setState(() => _isDeleting = true);
     try {
-      await AuthService.deleteTransaction(transaction!.id);
+      await AuthService.deleteTransaction(transactionId);
       if (!mounted) return;
       _changed = true;
       Navigator.pop(context, true);
@@ -409,6 +429,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
     }
   }
 
@@ -416,7 +438,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     final changed = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => EditTransactionScreen(transaction: item),
+        builder: (_) => EditTransactionScreen(
+          transaction: item,
+          transactionId: widget.transactionId,
+        ),
       ),
     );
     if (changed == true) {
@@ -468,7 +493,7 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -618,7 +643,12 @@ class _ErrorState extends StatelessWidget {
 // ─── Edit Transaction Screen ──────────────────────────────────
 class EditTransactionScreen extends StatefulWidget {
   final TransactionModel transaction;
-  const EditTransactionScreen({super.key, required this.transaction});
+  final String transactionId;
+  const EditTransactionScreen({
+    super.key,
+    required this.transaction,
+    required this.transactionId,
+  });
 
   @override
   State<EditTransactionScreen> createState() => _EditTransactionScreenState();
@@ -714,7 +744,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -928,7 +958,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       prefixText: prefix,
       prefixIcon: Icon(icon),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: Theme.of(context).cardColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: BorderSide(color: Colors.grey.shade200),
@@ -978,7 +1008,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200),
         ),
@@ -1043,9 +1073,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       ).format(combined);
       final title = titleCtrl.text.trim();
       final note = noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim();
+      final id = widget.transaction.id.isEmpty
+          ? widget.transactionId
+          : widget.transaction.id;
+      if (id.isEmpty) {
+        setState(() => errorMessage = "Transaction ID is missing");
+        return;
+      }
       if (isTransfer) {
         await AuthService.editTransferTransaction(
-          id: widget.transaction.id,
+          id: id,
           amount: amount,
           fromWalletId: fromWallet!.id,
           toWalletId: toWallet!.id,
@@ -1055,7 +1092,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         );
       } else {
         await AuthService.editIncomeExpenseTransaction(
-          id: widget.transaction.id,
+          id: id,
           type: widget.transaction.type,
           amount: amount,
           categoryId: selectedCategory!.id,
@@ -1066,7 +1103,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         );
       }
       if (!mounted) return;
-      Navigator.pop(context, true);
+      await Navigator.maybePop(context, true);
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() => errorMessage = e.message);

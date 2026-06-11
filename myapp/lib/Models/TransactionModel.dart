@@ -37,7 +37,11 @@ class TransactionModel {
     final type = data["type"]?.toString() ?? "expense";
 
     return TransactionModel(
-      id: data["id"]?.toString() ?? "",
+      id:
+          data["id"]?.toString() ??
+          data["transaction_id"]?.toString() ??
+          data["transactionId"]?.toString() ??
+          "",
       title: data["title"]?.toString() ?? "",
       category: data["category_name"]?.toString() ?? "Uncategorized",
       amount: _toNum(data["amount"]),

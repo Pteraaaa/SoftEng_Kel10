@@ -8,6 +8,7 @@ import 'package:myapp/Services/AuthService.dart';
 import 'package:myapp/Services/GoogleAuthService.dart';
 import 'package:myapp/Services/TokenStorage.dart';
 import 'package:myapp/Widgets/GoogleWebSignInButton.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class LoginSecurityScreen extends StatefulWidget {
   final UsersModel user;
@@ -110,7 +111,6 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF9F6),
       body: SafeArea(
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -939,7 +939,7 @@ class SecurityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -985,43 +985,49 @@ class SecurityActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accentColor = danger ? Colors.red : Colors.amber;
-    final textColor = disabled ? Colors.grey : Colors.black87;
+    final textColor = disabled
+        ? Colors.grey
+        : Theme.of(context).textTheme.bodyLarge?.color;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: accentColor.withValues(alpha: disabled ? 0.06 : 0.14),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: disabled ? Colors.grey : accentColor),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          subtitle,
-          style: TextStyle(
-            color: disabled ? Colors.grey : Colors.grey.shade600,
+    return HoverTapScale(
+      onTap: disabled || isLoading || trailing != null ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: accentColor.withValues(alpha: disabled ? 0.06 : 0.14),
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Icon(icon, color: disabled ? Colors.grey : accentColor),
         ),
-      ),
-      trailing:
-          trailing ??
-          TextButton(
-            onPressed: disabled || isLoading ? null : onTap,
-            child: Text(
-              actionLabel,
-              style: TextStyle(
-                color: danger ? Colors.red : Colors.amber.shade800,
-              ),
+        title: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.w600, color: textColor),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            subtitle,
+            style: TextStyle(
+              color: disabled ? Colors.grey : Colors.grey.shade600,
             ),
           ),
+        ),
+        trailing:
+            trailing ??
+            TextButton(
+              onPressed: disabled || isLoading ? null : onTap,
+              child: Text(
+                actionLabel,
+                style: TextStyle(
+                  color: danger ? Colors.red : Colors.amber.shade800,
+                ),
+              ),
+            ),
+      ),
     );
   }
 }

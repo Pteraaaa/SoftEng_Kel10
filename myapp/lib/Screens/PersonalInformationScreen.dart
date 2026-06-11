@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class PersonalInformationScreen extends StatefulWidget {
   final UsersModel user;
@@ -42,7 +43,7 @@ class _PersonalInformationScreenState extends State<PersonalInformationScreen> {
         return false;
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAF9F6),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(18),
@@ -453,7 +454,7 @@ class InfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -490,25 +491,29 @@ class EditableInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 42,
-        height: 42,
-        decoration: BoxDecoration(
-          color: Colors.amber.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12),
+    return HoverTapScale(
+      onTap: isUpdating ? null : onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.amber),
         ),
-        child: Icon(icon, color: Colors.amber),
-      ),
-      title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(value, style: TextStyle(color: Colors.grey.shade600)),
-      ),
-      trailing: TextButton(
-        onPressed: isUpdating ? null : onTap,
-        child: const Text("Change"),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(value, style: TextStyle(color: Colors.grey.shade600)),
+        ),
+        trailing: TextButton(
+          onPressed: isUpdating ? null : onTap,
+          child: const Text("Change"),
+        ),
       ),
     );
   }

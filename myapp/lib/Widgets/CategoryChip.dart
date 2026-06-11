@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Models/CategoryModel.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class CategoryChip extends StatelessWidget {
   final CategoryModel category;
@@ -19,14 +20,15 @@ class CategoryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _parseColor(category.colorHex);
 
-    return GestureDetector(
+    return HoverTapScale(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
 
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
 
         decoration: BoxDecoration(
-          color: isSelected ? color : Colors.white,
+          color: isSelected ? color : Theme.of(context).cardColor,
 
           border: Border.all(color: isSelected ? color : Colors.grey.shade300),
 
@@ -40,7 +42,9 @@ class CategoryChip extends StatelessWidget {
               category.icon,
               size: 18,
 
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context).textTheme.bodyLarge?.color,
             ),
 
             const SizedBox(width: 8),
@@ -49,7 +53,9 @@ class CategoryChip extends StatelessWidget {
               category.title,
 
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context).textTheme.bodyLarge?.color,
 
                 fontWeight: FontWeight.w500,
               ),

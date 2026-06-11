@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:myapp/Models/UsersModel.dart';
 import 'package:myapp/Screens/LoginSecurityScreen.dart';
+import 'package:myapp/Screens/AuthScreen.dart';
 import 'package:myapp/Screens/PersonalInformationScreen.dart';
 import 'package:myapp/Screens/ReminderScreen.dart';
+import 'package:myapp/Services/AppThemeService.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Services/TokenStorage.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UsersModel user;
@@ -113,8 +117,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: GestureDetector(
+                          child: HoverTapScale(
                             onTap: isChangingAvatar ? null : _changeAvatar,
+                            borderRadius: BorderRadius.circular(999),
+                            hoverScale: 1.1,
+                            pressScale: 0.92,
                             child: Container(
                               width: 34,
                               height: 34,
@@ -329,28 +336,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _signOut,
-                          icon: const Icon(
-                            Icons.logout_rounded,
-                            color: Colors.red,
+                      HoverTapScale(
+                        onTap: isSavingSettings ? null : _logout,
+                        borderRadius: BorderRadius.circular(16),
+                        hoverScale: 1.018,
+                        pressScale: 0.97,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.red.shade200),
+                            borderRadius: BorderRadius.circular(16),
                           ),
-                          label: Text(
-                            _t("Sign Out", "Keluar"),
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.red.shade200),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.logout_rounded,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _t("Logout", "Keluar"),
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -395,6 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             : "English";
         isDarkMode = appearance.toLowerCase() == "dark";
       });
+      AppThemeService.setDarkMode(isDarkMode);
     } catch (_) {
       // Settings are non-blocking for the profile page.
     }
@@ -455,9 +470,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       await AuthService.changeSettings(appearance: value ? "Dark" : "Light");
+      AppThemeService.setDarkMode(value);
     } catch (_) {
       if (!mounted) return;
       setState(() => isDarkMode = !value);
+      AppThemeService.setDarkMode(!value);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to update appearance")),
       );
@@ -466,33 +483,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _signOut() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(_t("Sign Out", "Keluar")),
-        content: Text(
-          _t("Are you sure you want to sign out?", "Anda yakin ingin keluar?"),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(_t("Cancel", "Batal")),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(_t("Sign Out", "Keluar")),
-          ),
-        ],
-      ),
-    );
-    if (ok == true && mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil("/", (_) => false);
+  Future<void> _logout() async {
+    setState(() => isSavingSettings = true);
+    try {
+      await AuthService.logout();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (_) => false,
+      );
+    } catch (error) {
+      await TokenStorage.clear();
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
+        (_) => false,
+      );
+    } finally {
+      if (mounted) setState(() => isSavingSettings = false);
     }
   }
 
@@ -594,9 +604,11 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return HoverTapScale(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
+      hoverScale: 1.018,
+      pressScale: 0.975,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(

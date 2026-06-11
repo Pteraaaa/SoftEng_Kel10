@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class CategoryAnalytics {
   final String categoryName;
@@ -256,21 +257,25 @@ class _FilterSegment extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF2F7),
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E293B)
+            : const Color(0xFFEFF2F7),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         children: filters.asMap().entries.map((entry) {
           final isSelected = selectedIndex == entry.key;
           return Expanded(
-            child: InkWell(
+            child: HoverTapScale(
               onTap: () => onChanged(entry.key),
               borderRadius: BorderRadius.circular(12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 11),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
+                  color: isSelected
+                      ? Theme.of(context).cardColor
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: isSelected
                       ? [
@@ -288,7 +293,7 @@ class _FilterSegment extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: isSelected
-                        ? const Color(0xFF0F172A)
+                        ? Theme.of(context).textTheme.bodyLarge?.color
                         : const Color(0xFF64748B),
                   ),
                 ),
@@ -544,7 +549,7 @@ class CategoryCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
@@ -626,7 +631,7 @@ class _EmptyAnalytics extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 36),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),

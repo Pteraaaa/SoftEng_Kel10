@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:myapp/Models/TransactionModel.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
@@ -21,14 +22,16 @@ class TransactionCard extends StatelessWidget {
     final isTransfer = transaction.type == "transfer";
     final amountPrefix = transaction.isExpense ? "-Rp. " : "+Rp. ";
 
-    return InkWell(
+    return HoverTapScale(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
+      hoverScale: 1.018,
+      pressScale: 0.975,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.18),

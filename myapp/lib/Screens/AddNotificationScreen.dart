@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/Services/AuthService.dart';
+import 'package:myapp/Widgets/HoverTapScale.dart';
 
 class AddNotificationScreen extends StatefulWidget {
   const AddNotificationScreen({super.key});
@@ -43,9 +44,9 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFAFAFA),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         title: const Text("Add Reminder"),
       ),
@@ -112,7 +113,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
                     hintText: "Pay electricity bill",
                     prefixIcon: const Icon(Icons.title),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).cardColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -134,20 +135,20 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
                     hintText: "Optional reminder note",
                     prefixIcon: const Icon(Icons.notes_outlined),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: Theme.of(context).cardColor,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
                 const SizedBox(height: 18),
-                InkWell(
+                HoverTapScale(
                   onTap: _pickTime,
                   borderRadius: BorderRadius.circular(14),
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: Colors.grey.shade300),
                     ),
